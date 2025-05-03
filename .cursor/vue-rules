@@ -1,0 +1,366 @@
+# Vue 3 Development Rules
+
+## Component Structure
+1. Single-File Components (SFC):
+   - Use `<script setup>` for Composition API
+   - Keep template, script, and style sections organized
+   - Use scoped styles when appropriate
+   - Example:
+   ```vue
+   <script setup>
+   import { ref } from 'vue'
+   const count = ref(0)
+   </script>
+
+   <template>
+     <button @click="count++">Count is: {{ count }}</button>
+   </template>
+
+   <style scoped>
+   button {
+     font-weight: bold;
+   }
+   </style>
+   ```
+
+## State Management
+1. Reactive State:
+   - Use `ref()` for primitive values
+   - Use `reactive()` for objects
+   - Always access ref values with `.value` in JavaScript
+   - Example:
+   ```javascript
+   const count = ref(0)
+   console.log(count.value) // 0
+   count.value++
+   ```
+
+2. Computed Properties:
+   - Use `computed()` for derived state
+   - Implement getters and setters when needed
+   - Example:
+   ```javascript
+   const fullName = computed({
+     get() {
+       return firstName.value + ' ' + lastName.value
+     },
+     set(newValue) {
+       [firstName.value, lastName.value] = newValue.split(' ')
+     }
+   })
+   ```
+
+## Component Communication
+1. Props and Events:
+   - Use `defineProps` for props declaration
+   - Use `defineEmits` for events
+   - Example:
+   ```vue
+   <script setup>
+   const props = defineProps({
+     foo: String
+   })
+   const emit = defineEmits(['change', 'delete'])
+   </script>
+   ```
+
+2. v-model:
+   - Use `defineModel` for two-way binding
+   - Support both default and named models
+   - Example:
+   ```javascript
+   const model = defineModel()
+   const count = defineModel('count', { type: Number, default: 0 })
+   ```
+
+## Lifecycle and Side Effects
+1. Lifecycle Hooks:
+   - Use `onMounted`, `onUnmounted`, etc.
+   - Clean up side effects in `onUnmounted`
+   - Example:
+   ```javascript
+   onMounted(() => {
+     console.log(`The initial count is ${count.value}.`)
+   })
+   ```
+
+2. Watchers:
+   - Use `watch` for reactive dependencies
+   - Handle async operations properly
+   - Example:
+   ```javascript
+   watch(question, async (newQuestion) => {
+     if (newQuestion.includes('?')) {
+       loading.value = true
+       try {
+         const res = await fetch('https://yesno.wtf/api')
+         answer.value = (await res.json()).answer
+       } finally {
+         loading.value = false
+       }
+     }
+   })
+   ```
+
+## Composables
+1. Custom Composables:
+   - Encapsulate reusable logic
+   - Return reactive state and methods
+   - Use `toRefs` when returning reactive objects
+   - Example:
+   ```javascript
+   function useFetch(url) {
+     const data = ref(null)
+     const error = ref(null)
+
+     fetch(url)
+       .then((res) => res.json())
+       .then((json) => (data.value = json))
+       .catch((err) => (error.value = err))
+
+     return { data, error }
+   }
+   ```
+
+## Component Registration
+1. Local Registration:
+   - Import and register components locally
+   - Example:
+   ```vue
+   <script>
+   import ComponentA from './ComponentA.vue'
+   export default {
+     components: {
+       ComponentA
+     }
+   }
+   </script>
+   ```
+
+2. Global Registration:
+   - Use sparingly for truly global components
+   - Example:
+   ```javascript
+   app.component('MyComponent', {
+     /* component definition */
+   })
+   ```
+
+## Slots
+1. Scoped Slots:
+   - Use v-bind to pass data to slots
+   - Example:
+   ```vue
+   <ul>
+     <li v-for="item in items">
+       <slot name="item" v-bind="item"></slot>
+     </li>
+   </ul>
+   ```
+
+## Error Handling
+1. API Calls:
+   - Always handle errors in async operations
+   - Use try/catch blocks
+   - Example:
+   ```javascript
+   try {
+     const res = await fetch(url)
+     data.value = await res.json()
+   } catch (error) {
+     error.value = error
+   }
+   ```
+
+## Performance
+1. Lazy Loading:
+   - Use dynamic imports for route components
+   - Example:
+   ```javascript
+   const UserDetails = () => import('./UserDetails.vue')
+   ```
+
+2. Reactivity:
+   - Avoid unnecessary reactivity
+   - Use `shallowRef` for large objects when appropriate
+   - Use `markRaw` for objects that don't need reactivity
+
+## TypeScript Integration
+1. Type Definitions:
+   - Define interfaces for props and emits
+   - Use type inference when possible
+   - Example:
+   ```typescript
+   interface Props {
+     title: string
+     count?: number
+   }
+   const props = defineProps<Props>()
+   ```
+
+## Security
+1. XSS Prevention:
+   - Avoid using v-html with user input
+   - Sanitize data before rendering
+   - Example:
+   ```vue
+   <!-- Avoid -->
+   <div v-html="userInput"></div>
+   
+   <!-- Prefer -->
+   <div>{{ sanitizedUserInput }}</div>
+   ```
+
+## Project-Specific Rules
+1. API Integration:
+   - Use dedicated API service files for each domain
+   - Follow naming convention: `[domain]Api.ts`
+   - Example:
+   ```typescript
+   // services/api/coursesApi.ts
+   export const coursesApi = {
+     getCourses: () => api.get('/courses'),
+     createCourse: (data) => api.post('/courses', data),
+     updateCourse: (id, data) => api.put(`/courses/${id}`, data)
+   }
+   ```
+
+2. Form Components:
+   - Create separate form components for complex forms
+   - Use Vuetify form components consistently
+   - Implement proper validation
+   - Example:
+   ```vue
+   <template>
+     <v-form @submit.prevent="handleSubmit">
+       <v-text-field
+         v-model="formData.title"
+         :rules="[required]"
+         label="Title"
+       />
+     </v-form>
+   </template>
+   ```
+
+3. Image Handling:
+   - Use ImageCropper component for image uploads
+   - Implement proper file validation
+   - Handle image preview and upload states
+   - Example:
+   ```vue
+   <image-cropper
+     v-model="image"
+     :aspect-ratio="16/9"
+     @cropped="handleCropped"
+   />
+   ```
+
+4. State Management:
+   - Use Pinia stores for global state
+   - Separate stores by domain
+   - Implement proper typing
+   - Example:
+   ```typescript
+   export const useCourseStore = defineStore('course', {
+     state: () => ({
+       courses: [],
+       currentCourse: null
+     }),
+     actions: {
+       async fetchCourses() {
+         // implementation
+       }
+     }
+   })
+   ```
+
+5. Component Organization:
+   - Keep complex components in separate directories
+   - Use feature-based organization for related components
+   - Example:
+   ```
+   components/
+     courseCreateEdit/
+       CourseForm.vue
+       CourseContent.vue
+       CourseSpeakers.vue
+   ```
+
+6. Editor Integration:
+   - Use AppEditor component for rich text editing
+   - Implement proper content sanitization
+   - Handle editor state and content updates
+   - Example:
+   ```vue
+   <app-editor
+     v-model="content"
+     :config="editorConfig"
+     @change="handleContentChange"
+   />
+   ```
+
+7. Modal Usage:
+   - Use AppModal component for dialogs
+   - Implement proper modal state management
+   - Handle modal events consistently
+   - Example:
+   ```vue
+   <app-modal
+     v-model="showModal"
+     title="Edit Course"
+     @confirm="handleConfirm"
+   >
+     <template #default>
+       <!-- modal content -->
+     </template>
+   </app-modal>
+   ```
+
+8. Authentication:
+   - Use dedicated auth store
+   - Implement proper token handling
+   - Handle auth state persistence
+   - Example:
+   ```typescript
+   export const useAuthStore = defineStore('auth', {
+     state: () => ({
+       token: null,
+       user: null
+     }),
+     actions: {
+       async login(credentials) {
+         // implementation
+       }
+     }
+   })
+   ```
+
+9. File Upload:
+   - Use dedicated fileApi service
+   - Implement proper file type validation
+   - Handle upload progress and errors
+   - Example:
+   ```typescript
+   export const fileApi = {
+     upload: (file) => {
+       const formData = new FormData()
+       formData.append('file', file)
+       return api.post('/files', formData)
+     }
+   }
+   ```
+
+10. Error Handling:
+    - Implement consistent error handling across API calls
+    - Use toast notifications for user feedback
+    - Handle network errors gracefully
+    - Example:
+    ```typescript
+    try {
+      await api.post('/endpoint', data)
+      toast.success('Operation successful')
+    } catch (error) {
+      toast.error(error.message)
+      console.error(error)
+    }
+    ``` 

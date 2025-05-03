@@ -9,6 +9,10 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@babylonjs/core": "^8.4.1",
+    "@babylonjs/gui": "^8.4.1",
+    "@babylonjs/loaders": "^8.4.1",
+    "@babylonjs/materials": "^8.4.1",
     "@sentry/tracing": "^7.13.0",
     "@sentry/vue": "^7.13.0",
     "@vuelidate/core": "^2.0.0-alpha.44",
@@ -63,14 +67,30 @@
     "env": {
       "node": true
     },
+    "parser": "vue-eslint-parser",
     "extends": [
-      "plugin:vue/vue3-essential",
+      "plugin:vue/vue3-recommended",
+      "plugin:vue-pug/vue3-recommended",
       "eslint:recommended",
       "@vue/typescript/recommended",
       "plugin:prettier/recommended"
     ],
     "parserOptions": {
-      "ecmaVersion": 2020
+      "parser": {
+        "ts": "@typescript-eslint/parser"
+      },
+      "vueFeatures": {
+        "filter": true,
+        "interpolationAsNonHTML": true,
+        "styleCSSVariableInjection": true
+      },
+      "sourceType": "module",
+      "ecmaVersion": 2020,
+      "ecmaFeatures": {
+        "globalReturn": false,
+        "impliedStrict": false,
+        "jsx": false
+      }
     },
     "rules": {},
     "overrides": [

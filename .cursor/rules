@@ -1,0 +1,1 @@
+завжди запускай команду yarn lint --fix && yarn prettier --write src/ після твоїх змін

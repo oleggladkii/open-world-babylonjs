@@ -1,0 +1,199 @@
+# TypeScript Development Rules
+
+## Generic Types
+1. Class Generics:
+   - Use generic constraints to ensure type safety
+   - Example:
+   ```typescript
+   class C<T> {
+     public bar2<U extends T>(x: T, y: U): T {
+       return null;
+     }
+   }
+   ```
+
+2. Generic Functions:
+   - Use type inference when possible
+   - Example:
+   ```typescript
+   const g00: <T>(x: T) => T[] = pipe(list);
+   const g01: <T>(x: T) => { value: T[] } = pipe(list, box);
+   ```
+
+## Type Guards
+1. Object Type Guards:
+   - Use type predicates for runtime type checking
+   - Example:
+   ```typescript
+   declare function isObject2(value: unknown): value is {};
+   
+   function gg2(x: Record<string, unknown>) {
+     if (isObject2(x)) {
+       x;  // Record<string, unknown>
+     }
+   }
+   ```
+
+2. Discriminated Unions:
+   - Use literal types for type discrimination
+   - Example:
+   ```typescript
+   function f31(obj: { kind: 'foo', foo: string } | { kind: 'bar', bar: number }) {
+     const { kind } = obj;
+     if (kind === 'foo') {
+       obj.foo;
+     }
+   }
+   ```
+
+## Conditional Types
+1. Type Unpacking:
+   - Use conditional types for type transformations
+   - Example:
+   ```typescript
+   type Unpacked<T> =
+     T extends (infer U)[] ? U :
+     T extends (...args: any[]) => infer U ? U :
+     T extends Promise<infer U> ? U :
+     T;
+   ```
+
+2. Variance Annotations:
+   - Use appropriate variance annotations
+   - Example:
+   ```typescript
+   type Covariant<out T> = { x: T; }
+   type Contravariant<in T> = { f: (x: T) => void; }
+   type Invariant<in out T> = { f: (x: T) => T; }
+   ```
+
+## Type Aliases and Interfaces
+1. Type Aliases:
+   - Use for simple type definitions
+   - Cannot be extended or merged
+   - Example:
+   ```typescript
+   type T1 = { x: string }
+   type T3<T> = { x: T }
+   ```
+
+2. Interfaces:
+   - Use for object types that need to be extended
+   - Can be merged and extended
+   - Example:
+   ```typescript
+   interface I1 extends T1 { y: string }
+   class C1 implements T1 {
+     x: string;
+   }
+   ```
+
+## Type Safety
+1. Satisfies Operator:
+   - Use for runtime type checking
+   - Example:
+   ```typescript
+   const p = /** @satisfies {Record<Keys, unknown>} */ ({
+     a: 0,
+     b: "hello"
+   })
+   ```
+
+2. Type Guards with Discriminated Unions:
+   - Use for runtime type checking
+   - Example:
+   ```typescript
+   type RuntimeValue =
+     | { type: 'number', value: number }
+     | { type: 'string', value: string };
+   ```
+
+## JSDoc Documentation
+1. Parameter Documentation:
+   - Document complex parameter types
+   - Example:
+   ```typescript
+   /**
+    * @param {Object[]} opts2
+    * @param {string} opts2[].anotherX
+    * @param {string=} opts2[].anotherY
+    */
+   function foo2(opts2) {
+     opts2[0].anotherX;
+   }
+   ```
+
+2. Template Types:
+   - Document generic types
+   - Example:
+   ```typescript
+   /**
+    * @param {T} a
+    * @template T
+    */
+   function f(a) {
+     return () => a
+   }
+   ```
+
+## Destructuring
+1. Array Destructuring:
+   - Use with type annotations
+   - Example:
+   ```typescript
+   var [b0, b1, b2]: [number, number, string] = [1, 2, "string"];
+   var [...b8] = foo();
+   ```
+
+2. Object Destructuring:
+   - Use with type guards
+   - Example:
+   ```typescript
+   const { kind } = obj;
+   if (kind === 'foo') {
+     obj.foo;
+   }
+   ```
+
+## React Integration
+1. Component Props:
+   - Use generic types for props
+   - Example:
+   ```typescript
+   declare class MyComp<P extends Prop> extends React.Component<P, {}> {
+     internalProp: P;
+   }
+   ```
+
+2. Class Inheritance:
+   - Use indexed access types for props
+   - Example:
+   ```typescript
+   class A<T> {
+     props: T & { foo: string };
+   }
+   
+   class B extends A<{ x: number}> {
+     f(p: this["props"]) {
+       p.x;
+     }
+   }
+   ```
+
+## Error Handling
+1. Type Errors:
+   - Handle type constraint violations
+   - Example:
+   ```typescript
+   var x = new C<number>();
+   x.bar2(2, ""); // Error: string is not assignable to number
+   ```
+
+2. Runtime Type Checking:
+   - Use type guards for runtime validation
+   - Example:
+   ```typescript
+   if (isObject2(x)) {
+     // x is now typed as object
+   }
+   ``` 
