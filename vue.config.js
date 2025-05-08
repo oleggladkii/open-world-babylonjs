@@ -39,4 +39,15 @@ module.exports = defineConfig({
   configureWebpack(config) {
     config.plugins = [...config.plugins, ...plugins];
   },
+  chainWebpack: (config) => {
+    // Add GLB file loader
+    config.module
+      .rule("glb")
+      .test(/\.glb$/)
+      .use("file-loader")
+      .loader("file-loader")
+      .options({
+        name: "models/[name].[hash:8].[ext]",
+      });
+  },
 });
