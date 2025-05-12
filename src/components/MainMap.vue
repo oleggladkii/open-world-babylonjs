@@ -19,11 +19,12 @@ import {
   SceneLoader,
   Angle,
 } from "@babylonjs/core";
-import { GridMaterial } from "@babylonjs/materials";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { GLTFFileLoader } from "@babylonjs/loaders/glTF";
 import mainMapHeightMap from "@/assets/textures/main-map-height-map.png";
 import mainMapHeightMapTexture from "@/assets/textures/main-map-height-map-texture.png";
 import { MAIN_MAP_CONFIG } from "@/utils/config/mainMap.config";
+import { useDebug } from "@/composables/useDebug";
 
 const CONFIG = MAIN_MAP_CONFIG;
 interface BuildingData {
@@ -32,19 +33,37 @@ interface BuildingData {
   rotation: Vector3;
   scale: Vector3;
 }
+
+interface EnvironmentData {
+  mesh: Mesh;
+  position: Vector3;
+  rotation: Vector3;
+  scale: Vector3;
+}
+
 const state = reactive<{
   engine: Engine | null;
   scene: Scene | null;
   mainMapCamera: ArcRotateCamera | null;
   buildings: BuildingData[];
+  environments: EnvironmentData[];
 }>({
   engine: null,
   scene: null,
   mainMapCamera: null,
   buildings: [],
+  environments: [],
 });
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
+
+const {
+  setupBuildingGizmoPosition,
+  setupBuildingGizmoScale,
+  setupBuildingGizmoRotation,
+  createGroundGrid,
+  setupLightGizmo,
+} = useDebug();
 
 const createCamera = (
   scene: Scene,
@@ -83,10 +102,8 @@ const loadBuildingModel = async (
       buildingConfig.modelName,
       scene
     );
-
     const mesh = result.meshes[0];
     if (!mesh) return null;
-
     mesh.position = buildingConfig.position;
     mesh.rotation = buildingConfig.rotation;
     mesh.scaling = buildingConfig.scale;
@@ -94,7 +111,6 @@ const loadBuildingModel = async (
     if (buildingConfig.interactible) {
       // TODO: setup building interactions
     }
-
     return {
       mesh: mesh as Mesh,
       position: mesh.position,
@@ -114,32 +130,84 @@ const createBuildings = async (scene: Scene): Promise<BuildingData[]> => {
     const building = await loadBuildingModel(scene, i);
     if (building) {
       buildings.push(building);
+      if (CONFIG.debug.buildingGizmoPosition) {
+        setupBuildingGizmoPosition(building.mesh, CONFIG.buildings[i], scene);
+      }
+      if (CONFIG.debug.buildingGizmoScale) {
+        setupBuildingGizmoScale(building.mesh, CONFIG.buildings[i], scene);
+      }
+      if (CONFIG.debug.buildingGizmoRotation) {
+        setupBuildingGizmoRotation(building.mesh, CONFIG.buildings[i], scene);
+      }
     }
   }
-
   return buildings;
 };
 
-// Create grid overlay
-const createGroundGrid = (scene: Scene) => {
-  const grid = MeshBuilder.CreateGround(
-    "grid",
-    {
-      width: CONFIG.ground.width,
-      height: CONFIG.ground.height,
-      subdivisions: 20,
-    },
-    scene
-  );
-  grid.position.y = 10;
-  const gridMaterial = new GridMaterial("gridMaterial", scene);
-  gridMaterial.majorUnitFrequency = 5;
-  gridMaterial.minorUnitVisibility = 0.5;
-  gridMaterial.gridRatio = 1;
-  gridMaterial.mainColor = new Color3(1, 1, 1);
-  gridMaterial.lineColor = new Color3(0.5, 0.5, 0.5);
-  gridMaterial.opacity = 0.3;
-  grid.material = gridMaterial;
+const loadEnvironmentModel = async (
+  scene: Scene,
+  index: number
+): Promise<EnvironmentData | null> => {
+  try {
+    const environmentConfig = CONFIG.environments[index];
+    const result = await SceneLoader.ImportMeshAsync(
+      "",
+      "/assets/models/environments/",
+      environmentConfig.modelName,
+      scene
+    );
+    const mesh = result.meshes[0];
+    if (!mesh) return null;
+    mesh.position = environmentConfig.position;
+    mesh.rotation = environmentConfig.rotation;
+    mesh.scaling = environmentConfig.scale;
+
+    if (environmentConfig.interactible) {
+      // TODO: setup environment interactions
+    }
+    return {
+      mesh: mesh as Mesh,
+      position: mesh.position,
+      rotation: mesh.rotation,
+      scale: mesh.scaling,
+    };
+  } catch (error) {
+    console.error(`Failed to load environment model ${index}:`, error);
+    return null;
+  }
+};
+
+const createEnvironments = async (scene: Scene): Promise<EnvironmentData[]> => {
+  const environments: EnvironmentData[] = [];
+
+  for (let i = 0; i < CONFIG.environments.length; i++) {
+    const environment = await loadEnvironmentModel(scene, i);
+    if (environment) {
+      environments.push(environment);
+      if (CONFIG.debug.buildingGizmoPosition) {
+        setupBuildingGizmoPosition(
+          environment.mesh,
+          CONFIG.environments[i],
+          scene
+        );
+      }
+      if (CONFIG.debug.buildingGizmoScale) {
+        setupBuildingGizmoScale(
+          environment.mesh,
+          CONFIG.environments[i],
+          scene
+        );
+      }
+      if (CONFIG.debug.buildingGizmoRotation) {
+        setupBuildingGizmoRotation(
+          environment.mesh,
+          CONFIG.environments[i],
+          scene
+        );
+      }
+    }
+  }
+  return environments;
 };
 
 // Create the heightmap ground
@@ -166,8 +234,8 @@ const createGround = (scene: Scene): Mesh => {
   }
   ground.material = groundMat;
 
-  if (CONFIG.debug) {
-    createGroundGrid(scene);
+  if (CONFIG.debug.groundGrid) {
+    createGroundGrid(scene, CONFIG.ground.width, CONFIG.ground.height);
   }
   return ground;
 };
@@ -183,11 +251,25 @@ const createScene = async (): Promise<void> => {
   // Create scene elements
   state.mainMapCamera = createCamera(state.scene, canvas);
 
-  new HemisphericLight("light", new Vector3(0, 1, 0), state.scene);
+  const light = new HemisphericLight(
+    "light",
+    new Vector3(15.124765396118164, 20.659635543823242, -13.0604829788208),
+    state.scene
+  );
+  if (CONFIG.debug.lightGizmo) {
+    setupLightGizmo(light, state.scene);
+  }
   createGround(state.scene);
 
-  // Load buildings
+  // Load buildings and environments
   state.buildings = await createBuildings(state.scene);
+  state.environments = await createEnvironments(state.scene);
+
+  // state.scene.registerBeforeRender(() => {
+  //   if (state.buildings[0]) {
+  //     state.buildings[0].mesh.rotation.y += 0.01;
+  //   }
+  // });
 
   // Start render loop
   state.engine.runRenderLoop(() => {
@@ -207,6 +289,10 @@ const cleanupScene = (): void => {
 
   state.buildings.forEach((building) => {
     building.mesh.dispose();
+  });
+
+  state.environments.forEach((environment) => {
+    environment.mesh.dispose();
   });
 
   if (state.scene) {
