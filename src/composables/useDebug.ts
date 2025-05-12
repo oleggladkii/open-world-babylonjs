@@ -113,13 +113,11 @@ export const useDebug = () => {
 
   const setupLightGizmo = (light: Light, scene: Scene): void => {
     try {
-      // Create a small sphere to represent the light position
       const lightMesh = MeshBuilder.CreateSphere(
         `lightGizmo_${light.name}`,
         { diameter: 0.5 },
         scene
       );
-      // Set the mesh position to match the light
       if (light instanceof HemisphericLight) {
         lightMesh.position = light.direction;
       } else if (light instanceof DirectionalLight) {
@@ -128,12 +126,10 @@ export const useDebug = () => {
         lightMesh.position = light.position;
       }
 
-      // Create utility layer and position gizmo
       const utilLayer = new UtilityLayerRenderer(scene);
       const positionGizmo = new PositionGizmo(utilLayer);
       positionGizmo.attachedMesh = lightMesh;
 
-      // Update light position when gizmo is moved
       positionGizmo.onDragEndObservable.add(() => {
         if (
           light instanceof HemisphericLight ||
@@ -151,7 +147,6 @@ export const useDebug = () => {
         });
       });
 
-      // Add color to the gizmo based on light type
       const material = new StandardMaterial(
         `lightGizmoMat_${light.name}`,
         scene

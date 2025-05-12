@@ -7,7 +7,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     buildingGizmoPosition: false,
     buildingGizmoScale: false,
     buildingGizmoRotation: false,
-    lightGizmo: true,
+    lightGizmo: false,
   },
   ground: {
     width: 200,
