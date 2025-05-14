@@ -3,11 +3,12 @@ import { MapConfig } from "@/interfaces/MapConfig";
 
 export const MAIN_MAP_CONFIG: MapConfig = {
   debug: {
+    inspector: false,
     groundGrid: false,
-    buildingGizmoPosition: false,
-    buildingGizmoScale: false,
-    buildingGizmoRotation: false,
     lightGizmo: false,
+    gizmoPosition: false,
+    gizmoScale: false,
+    gizmoRotation: false,
   },
   ground: {
     width: 200,
@@ -16,7 +17,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
   camera: {
     initialRadius: 100,
     minRadius: 50,
-    maxRadius: 150,
+    maxRadius: 200,
     panningSensibility: 50,
     wheelDeltaPercentage: 0.01,
     lowerBetaLimit: Angle.FromDegrees(20).radians(),
@@ -26,8 +27,8 @@ export const MAIN_MAP_CONFIG: MapConfig = {
   },
   buildings: [
     {
-      interactible: true,
-      size: { width: 17, depth: 10, height: 6 },
+      interactible: false,
+      size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(28, 5, 3),
       rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
       scale: new Vector3(1, 1.3, 1.2),
@@ -36,7 +37,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     },
     {
       interactible: true,
-      size: { width: 20, depth: 30, height: 7 },
+      size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(49, 6, 20),
       rotation: new Vector3(0, 0, 0),
       scale: new Vector3(1.15, 1.1, 1),
@@ -45,7 +46,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     },
     {
       interactible: true,
-      size: { width: 13, depth: 17, height: 20 },
+      size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(7.743345737457275, 5, 22),
       rotation: new Vector3(0, 0, 0),
       scale: new Vector3(1, 1.3, 1),
@@ -53,7 +54,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       highlightColor: new Color3(0.2, 0.2, 0.8),
     },
     {
-      interactible: true,
+      interactible: false,
       size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(
         27.929122924804688,
@@ -68,7 +69,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
   ],
   environments: [
     {
-      interactible: true,
+      interactible: false,
       position: new Vector3(
         -64.78382110595703,
         19.061641693115234,
@@ -79,7 +80,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       modelName: "pine-tree.glb",
     },
     {
-      interactible: true,
+      interactible: false,
       position: new Vector3(
         -33.72332000732422,
         15.061641693115234,
@@ -88,6 +89,60 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       rotation: new Vector3(0, Angle.FromDegrees(80).radians(), 0),
       scale: new Vector3(1, 1, 1),
       modelName: "pine-tree.glb",
+    },
+  ],
+  animatedModels: [
+    {
+      modelName: "female-walk-loop.glb",
+      position: new Vector3(0, 0, 0),
+      rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+      scale: new Vector3(1.7, 1.7, 1.7),
+      animationName: "walk",
+      animationSpeed: 1,
+      loopAnimation: true,
+      isMoving: true,
+      path: {
+        points: [
+          {
+            position: new Vector3(7.384357929229736, 6, 10.11191463470459),
+            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+          },
+          {
+            position: new Vector3(58.13905334472656, 6, 10.11191463470459),
+            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+          },
+          {
+            position: new Vector3(
+              58.13905334472656,
+              5.076845645904541,
+              51.76905822753906
+            ),
+            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+          },
+          {
+            position: new Vector3(
+              -0.052407484501600266,
+              5.076845645904541,
+              51.76905822753906
+            ),
+            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+          },
+          {
+            position: new Vector3(
+              -0.052407484501600266,
+              5.076845645904541,
+              10.11191463470459
+            ),
+            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+          },
+          {
+            position: new Vector3(7.384357929229736, 6, 10.11191463470459),
+            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+          },
+        ],
+        duration: 120,
+        loop: true,
+      },
     },
   ],
   baseColor: new Color3(0.6, 0.6, 0.6),

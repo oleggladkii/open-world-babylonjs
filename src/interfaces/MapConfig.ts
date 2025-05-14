@@ -2,10 +2,11 @@ import { Vector3, Color3 } from "@babylonjs/core";
 
 export interface MapDebugConfig {
   groundGrid: boolean;
-  buildingGizmoPosition: boolean;
-  buildingGizmoScale: boolean;
-  buildingGizmoRotation: boolean;
+  gizmoPosition: boolean;
+  gizmoScale: boolean;
+  gizmoRotation: boolean;
   lightGizmo: boolean;
+  inspector: boolean;
 }
 
 export interface MapGroundConfig {
@@ -42,11 +43,31 @@ export interface MapBuildingConfig {
 }
 
 export interface MapEnvironmentConfig {
-  interactible: boolean;
+  modelName: string;
   position: Vector3;
   rotation: Vector3;
   scale: Vector3;
+  interactible: boolean;
+}
+
+export interface MapAnimatedModelConfig {
   modelName: string;
+  position: Vector3;
+  rotation: Vector3;
+  scale: Vector3;
+  animationName: string;
+  animationSpeed: number;
+  loopAnimation: boolean;
+  interactible?: boolean;
+  isMoving: boolean;
+  path?: {
+    points: Array<{
+      position: Vector3;
+      rotation: Vector3;
+    }>;
+    duration: number;
+    loop: boolean;
+  };
 }
 
 export interface MapConfig {
@@ -55,5 +76,6 @@ export interface MapConfig {
   camera: MapCameraConfig;
   buildings: MapBuildingConfig[];
   environments: MapEnvironmentConfig[];
+  animatedModels: MapAnimatedModelConfig[];
   baseColor: Color3;
 }

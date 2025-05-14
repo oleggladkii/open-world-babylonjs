@@ -16,12 +16,21 @@ import {
   StandardMaterial,
 } from "@babylonjs/core";
 import { GridMaterial } from "@babylonjs/materials";
-import { MapBuildingConfig } from "@/interfaces/MapConfig";
+import {
+  MapBuildingConfig,
+  MapEnvironmentConfig,
+  MapAnimatedModelConfig,
+} from "@/interfaces/MapConfig";
+
+type ObjectConfig =
+  | MapBuildingConfig
+  | MapEnvironmentConfig
+  | MapAnimatedModelConfig;
 
 export const useDebug = () => {
   const setupBuildingGizmoPosition = (
     mesh: Mesh,
-    buildingConfig: MapBuildingConfig,
+    config: ObjectConfig,
     scene: Scene
   ): void => {
     try {
@@ -29,21 +38,21 @@ export const useDebug = () => {
       const positionGizmo = new PositionGizmo(utilLayer);
       positionGizmo.attachedMesh = mesh;
       positionGizmo.onDragEndObservable.add(() => {
-        console.log("New building position:", {
-          name: buildingConfig.modelName,
+        console.log("New object position:", {
+          name: config.modelName,
           positionX: mesh.position._x,
           positionY: mesh.position._y,
           positionZ: mesh.position._z,
         });
       });
     } catch (error) {
-      console.error("Failed to setup building gizmo:", error);
+      console.error("Failed to setup position gizmo:", error);
     }
   };
 
   const setupBuildingGizmoScale = (
     mesh: Mesh,
-    buildingConfig: MapBuildingConfig,
+    config: ObjectConfig,
     scene: Scene
   ): void => {
     try {
@@ -51,21 +60,21 @@ export const useDebug = () => {
       const scaleGizmo = new ScaleGizmo(utilLayer);
       scaleGizmo.attachedMesh = mesh;
       scaleGizmo.onDragEndObservable.add(() => {
-        console.log("New building scale:", {
-          name: buildingConfig.modelName,
+        console.log("New object scale:", {
+          name: config.modelName,
           scaleX: mesh.scaling._x,
           scaleY: mesh.scaling._y,
           scaleZ: mesh.scaling._z,
         });
       });
     } catch (error) {
-      console.error("Failed to setup building scale gizmo:", error);
+      console.error("Failed to setup scale gizmo:", error);
     }
   };
 
   const setupBuildingGizmoRotation = (
     mesh: Mesh,
-    buildingConfig: MapBuildingConfig,
+    config: ObjectConfig,
     scene: Scene
   ): void => {
     try {
@@ -78,7 +87,7 @@ export const useDebug = () => {
       rotationGizmo.updateGizmoRotationToMatchAttachedMesh = false;
       rotationGizmo.attachedMesh = mesh;
     } catch (error) {
-      console.error("Failed to setup building rotation gizmo:", error);
+      console.error("Failed to setup rotation gizmo:", error);
     }
   };
 

@@ -24,7 +24,6 @@ const isThirdPersonView = ref(false);
 const targetPosition = ref<Vector3>(Vector3.Zero());
 
 const updateThirdPersonView = (value: boolean): void => {
-  console.log("isThirdPersonView.value", value);
   isThirdPersonView.value = value;
 };
 
