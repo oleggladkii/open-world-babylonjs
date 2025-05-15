@@ -66,6 +66,37 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       modelName: "house_05.glb",
       highlightColor: new Color3(0.2, 0.2, 0.8),
     },
+    {
+      interactible: false,
+      size: { width: 1, depth: 1, height: 1 },
+      position: new Vector3(
+        48.61846923828125,
+        5.667227268218994,
+        41.224761962890625
+      ),
+      rotation: new Vector3(0, 0, 0),
+      scale: new Vector3(1.3, 1.3, 0.7),
+      modelName: "house_06.glb",
+      highlightColor: new Color3(0.2, 0.2, 0.8),
+    },
+    {
+      interactible: false,
+      size: { width: 1, depth: 1, height: 1 },
+      position: new Vector3(8.572281837463379, 6, 41.688819885253906),
+      rotation: new Vector3(0, 0, 0),
+      scale: new Vector3(1.4, 1.3, 0.9),
+      modelName: "house_09.glb",
+      highlightColor: new Color3(0.2, 0.2, 0.8),
+    },
+    {
+      interactible: false,
+      size: { width: 1, depth: 1, height: 1 },
+      position: new Vector3(49.12409210205078, 6, 60.03775405883789),
+      rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+      scale: new Vector3(1.4, 1.3, 0.9),
+      modelName: "house_09.glb",
+      highlightColor: new Color3(0.2, 0.2, 0.8),
+    },
   ],
   environments: [
     {

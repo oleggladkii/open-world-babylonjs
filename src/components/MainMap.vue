@@ -166,16 +166,12 @@ const loadEnvironmentModel = async (
 ): Promise<EnvironmentData | null> => {
   try {
     const environmentConfig = CONFIG.environments[index];
-
-    // Check if model is already in cache
     let mesh: Mesh;
     if (state.modelCache.has(environmentConfig.modelName)) {
-      // Clone the cached model
       const cachedMesh = state.modelCache.get(environmentConfig.modelName);
       if (!cachedMesh) return null;
       mesh = cachedMesh.clone(`env_${index}`);
     } else {
-      // Load new model and cache it
       const result = await SceneLoader.ImportMeshAsync(
         "",
         "/assets/models/environments/",
@@ -185,11 +181,9 @@ const loadEnvironmentModel = async (
       mesh = result.meshes[0];
       if (!mesh) return null;
 
-      // Cache the original model
       state.modelCache.set(environmentConfig.modelName, mesh);
     }
 
-    // Set position, rotation, and scale for the mesh
     mesh.position = environmentConfig.position;
     mesh.rotation = environmentConfig.rotation;
     mesh.scaling = environmentConfig.scale;
@@ -281,13 +275,11 @@ const loadAnimatedModel = async (
     mesh.rotation = animatedConfig.rotation;
     mesh.scaling = animatedConfig.scale;
 
-    // Add movement animation if path is configured and isMoving is true
     if (animatedConfig.isMoving && animatedConfig.path) {
       const pathPoints = animatedConfig.path.points;
       const duration = animatedConfig.path.duration;
       const loop = animatedConfig.path.loop;
 
-      // Create position animation
       const positionAnimation = new Animation(
         "positionAnimation",
         "position",
@@ -296,7 +288,6 @@ const loadAnimatedModel = async (
         Animation.ANIMATIONLOOPMODE_CYCLE
       );
 
-      // Create rotation animation
       const rotationAnimation = new Animation(
         "rotationAnimation",
         "rotation",
@@ -305,7 +296,6 @@ const loadAnimatedModel = async (
         Animation.ANIMATIONLOOPMODE_CYCLE
       );
 
-      // Create key frames for each point
       const positionKeyFrames = [];
       const rotationKeyFrames = [];
 
@@ -317,24 +307,20 @@ const loadAnimatedModel = async (
           value: pathPoints[i].position,
         });
 
-        // Add two keyframes for rotation to create instant turn
         rotationKeyFrames.push({
-          frame: frame - 1, // One frame before position change
+          frame: frame - 1,
           value: pathPoints[i].rotation,
         });
 
         rotationKeyFrames.push({
-          frame, // Same frame as position change
+          frame,
           value: pathPoints[i].rotation,
         });
       }
-
       positionAnimation.setKeys(positionKeyFrames);
       rotationAnimation.setKeys(rotationKeyFrames);
-
       mesh.animations = [positionAnimation, rotationAnimation];
 
-      // Start the animations
       scene.beginAnimation(mesh, 0, duration * 30, loop);
     }
 
@@ -417,9 +403,7 @@ const createGround = (scene: Scene): Mesh => {
 };
 
 const handleBuildingClick = (mesh: Mesh): void => {
-  // Find the building data for the clicked mesh by position
   const clickedBuilding = state.buildings.find((b) => {
-    // Compare positions with a small epsilon to account for floating point precision
     return (
       Math.abs(b.position.x - mesh.absolutePosition.x) < 0.1 &&
       Math.abs(b.position.y - mesh.absolutePosition.y) < 0.1 &&
@@ -443,7 +427,6 @@ const handleBuildingClick = (mesh: Mesh): void => {
       CONFIG.buildings[state.buildings.indexOf(clickedBuilding)].modelName,
   });
 
-  // If clicking the same building, deselect it
   if (state.selectedBuilding === clickedBuilding) {
     if (state.selectedBuilding.mesh.material instanceof StandardMaterial) {
       state.selectedBuilding.mesh.material.emissiveColor = new Color3(0, 0, 0);
@@ -452,7 +435,6 @@ const handleBuildingClick = (mesh: Mesh): void => {
     return;
   }
 
-  // Deselect previously selected building
   if (
     state.selectedBuilding &&
     state.selectedBuilding.mesh.material instanceof StandardMaterial
@@ -460,7 +442,6 @@ const handleBuildingClick = (mesh: Mesh): void => {
     state.selectedBuilding.mesh.material.emissiveColor = new Color3(0, 0, 0);
   }
 
-  // Select new building if it's interactible
   if (
     clickedBuilding.mesh.material instanceof StandardMaterial &&
     CONFIG.buildings[state.buildings.indexOf(clickedBuilding)].interactible
@@ -478,7 +459,6 @@ const createScene = async (): Promise<void> => {
   state.engine = new Engine(canvas, true);
   state.scene = new Scene(state.engine);
 
-  // Create scene elements
   state.mainMapCamera = createCamera(state.scene, canvas);
 
   const light = new HemisphericLight(
