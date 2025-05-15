@@ -6,7 +6,6 @@ import "@/scss/styles.scss";
 import { createPinia } from "pinia";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import { PiniaSharedState } from "pinia-shared-state";
-import { Integrations } from "@sentry/tracing";
 
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);

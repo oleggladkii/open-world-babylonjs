@@ -120,82 +120,82 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     },
   ],
   environments: [
-    // {
-    //   interactible: false,
-    //   position: new Vector3(
-    //     -64.78382110595703,
-    //     19.061641693115234,
-    //     -36.627166748046875
-    //   ),
-    //   rotation: new Vector3(0, 0, 0),
-    //   scale: new Vector3(1, 1, 1),
-    //   modelName: "pine-tree.glb",
-    // },
-    // {
-    //   interactible: false,
-    //   position: new Vector3(
-    //     -33.72332000732422,
-    //     15.061641693115234,
-    //     -48.158836364746094
-    //   ),
-    //   rotation: new Vector3(0, Angle.FromDegrees(80).radians(), 0),
-    //   scale: new Vector3(1, 1, 1),
-    //   modelName: "pine-tree.glb",
-    // },
+    {
+      interactible: false,
+      position: new Vector3(
+        -64.78382110595703,
+        19.061641693115234,
+        -36.627166748046875
+      ),
+      rotation: new Vector3(0, 0, 0),
+      scale: new Vector3(1, 1, 1),
+      modelName: "pine-tree.glb",
+    },
+    {
+      interactible: false,
+      position: new Vector3(
+        -33.72332000732422,
+        15.061641693115234,
+        -48.158836364746094
+      ),
+      rotation: new Vector3(0, Angle.FromDegrees(80).radians(), 0),
+      scale: new Vector3(1, 1, 1),
+      modelName: "pine-tree.glb",
+    },
   ],
   animatedModels: [
-    // {
-    //   modelName: "female-walk-loop.glb",
-    //   position: new Vector3(0, 0, 0),
-    //   rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-    //   scale: new Vector3(1.7, 1.7, 1.7),
-    //   animationName: "walk",
-    //   animationSpeed: 1,
-    //   loopAnimation: true,
-    //   isMoving: true,
-    //   path: {
-    //     points: [
-    //       {
-    //         position: new Vector3(7.384357929229736, 6, 10.11191463470459),
-    //         rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-    //       },
-    //       {
-    //         position: new Vector3(58.13905334472656, 6, 10.11191463470459),
-    //         rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-    //       },
-    //       {
-    //         position: new Vector3(
-    //           58.13905334472656,
-    //           5.076845645904541,
-    //           51.76905822753906
-    //         ),
-    //         rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-    //       },
-    //       {
-    //         position: new Vector3(
-    //           -0.052407484501600266,
-    //           5.076845645904541,
-    //           51.76905822753906
-    //         ),
-    //         rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-    //       },
-    //       {
-    //         position: new Vector3(
-    //           -0.052407484501600266,
-    //           5.076845645904541,
-    //           10.11191463470459
-    //         ),
-    //         rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-    //       },
-    //       {
-    //         position: new Vector3(7.384357929229736, 6, 10.11191463470459),
-    //         rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-    //       },
-    //     ],
-    //     duration: 120,
-    //     loop: true,
-    //   },
-    // },
+    {
+      modelName: "female-walk-loop.glb",
+      position: new Vector3(0, 0, 0),
+      rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+      scale: new Vector3(1.7, 1.7, 1.7),
+      animationName: "walk",
+      animationSpeed: 1,
+      loopAnimation: true,
+      isMoving: true,
+      path: {
+        points: [
+          {
+            position: new Vector3(7.384357929229736, 6, 10.11191463470459),
+            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+          },
+          {
+            position: new Vector3(58.13905334472656, 6, 10.11191463470459),
+            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+          },
+          {
+            position: new Vector3(
+              58.13905334472656,
+              5.076845645904541,
+              51.76905822753906
+            ),
+            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+          },
+          {
+            position: new Vector3(
+              -0.052407484501600266,
+              5.076845645904541,
+              51.76905822753906
+            ),
+            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+          },
+          {
+            position: new Vector3(
+              -0.052407484501600266,
+              5.076845645904541,
+              10.11191463470459
+            ),
+            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+          },
+          {
+            position: new Vector3(7.384357929229736, 6, 10.11191463470459),
+            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+          },
+        ],
+        duration: 120,
+        loop: true,
+      },
+    },
   ],
   baseColor: new Color3(0.6, 0.6, 0.6),
 };
