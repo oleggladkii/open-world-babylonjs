@@ -40,9 +40,7 @@ export const useDebug = () => {
       positionGizmo.onDragEndObservable.add(() => {
         console.log("New object position:", {
           name: config.modelName,
-          positionX: mesh.position._x,
-          positionY: mesh.position._y,
-          positionZ: mesh.position._z,
+          position: `${mesh.position._x}, ${mesh.position._y}, ${mesh.position._z}`,
         });
       });
     } catch (error) {
@@ -62,9 +60,7 @@ export const useDebug = () => {
       scaleGizmo.onDragEndObservable.add(() => {
         console.log("New object scale:", {
           name: config.modelName,
-          scaleX: mesh.scaling._x,
-          scaleY: mesh.scaling._y,
-          scaleZ: mesh.scaling._z,
+          scale: `${mesh.scaling._x}, ${mesh.scaling._y}, ${mesh.scaling._z}`,
         });
       });
     } catch (error) {

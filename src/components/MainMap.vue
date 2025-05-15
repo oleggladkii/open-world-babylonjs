@@ -395,6 +395,7 @@ const createGround = (scene: Scene): Mesh => {
     groundMat.diffuseColor = new Color3(0.2, 0.8, 0.2);
   }
   ground.material = groundMat;
+  ground.colission = true;
 
   if (CONFIG.debug.groundGrid) {
     createGroundGrid(scene, CONFIG.ground.width, CONFIG.ground.height);
