@@ -23,6 +23,7 @@
     "axios": "^0.24.0",
     "core-js": "^3.8.3",
     "dayjs": "^1.11.4",
+    "gsap": "^3.13.0",
     "pinia": "^2.0.22",
     "pinia-plugin-persistedstate": "^2.2.0",
     "pinia-shared-state": "^0.2.8",

@@ -48,7 +48,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
         47.50614929199219
       ),
       rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-      scale: new Vector3(2.3, 1.4, -1.8),
+      scale: new Vector3(2.3, 1.6, -1.8),
       modelName: "city-hall.glb",
       highlightColor: new Color3(0.8, 0.2, 0.2),
     },
@@ -61,7 +61,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
         41.148685455322266
       ),
       rotation: new Vector3(0, Angle.FromDegrees(-90).radians(), 0),
-      scale: new Vector3(-1.5, 1.5, 1.8),
+      scale: new Vector3(-1.5, 1.6, 1.8),
       modelName: "cinema.glb",
       highlightColor: new Color3(0.8, 0.2, 0.2),
     },
@@ -124,7 +124,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       interactible: false,
       position: new Vector3(
         -64.78382110595703,
-        19.061641693115234,
+        11.561641693115234,
         -36.627166748046875
       ),
       rotation: new Vector3(0, 0, 0),
@@ -135,7 +135,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       interactible: false,
       position: new Vector3(
         -33.72332000732422,
-        15.061641693115234,
+        10.352472305297852,
         -48.158836364746094
       ),
       rotation: new Vector3(0, Angle.FromDegrees(80).radians(), 0),
@@ -146,7 +146,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
   animatedModels: [
     {
       modelName: "female-walk-loop.glb",
-      position: new Vector3(0, 0, 0),
+      position: new Vector3(7.384357929229736, 6, 10.11191463470459),
       rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
       scale: new Vector3(1.7, 1.7, 1.7),
       animationName: "walk",
@@ -163,36 +163,8 @@ export const MAIN_MAP_CONFIG: MapConfig = {
             position: new Vector3(58.13905334472656, 6, 10.11191463470459),
             rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
           },
-          {
-            position: new Vector3(
-              58.13905334472656,
-              5.076845645904541,
-              51.76905822753906
-            ),
-            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-          },
-          {
-            position: new Vector3(
-              -0.052407484501600266,
-              5.076845645904541,
-              51.76905822753906
-            ),
-            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-          },
-          {
-            position: new Vector3(
-              -0.052407484501600266,
-              5.076845645904541,
-              10.11191463470459
-            ),
-            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-          },
-          {
-            position: new Vector3(7.384357929229736, 6, 10.11191463470459),
-            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-          },
         ],
-        duration: 120,
+        duration: 6,
         loop: true,
       },
     },

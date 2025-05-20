@@ -1,10 +1,12 @@
 <template lang="pug">
 div
-  canvas(ref="canvasRef", style="width: 100%; height: 100vh")
+  app-loader(v-if="uiStore.isLoading")
+  main-map-ui(v-else)
+  canvas(ref="canvasRef")
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, reactive } from "vue";
+import { onMounted, onBeforeUnmount, ref, reactive, watch } from "vue";
 import {
   Engine,
   Scene,
@@ -20,8 +22,11 @@ import {
   Angle,
   PointerInfo,
   PointerEventTypes,
-  Animation,
   AnimationGroup,
+  CreateAudioEngineAsync,
+  CreateStreamingSoundAsync,
+  AudioEngine,
+  Sound,
 } from "@babylonjs/core";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { GLTFFileLoader } from "@babylonjs/loaders/glTF";
@@ -30,8 +35,12 @@ import mainMapHeightMapTexture from "@/assets/textures/main-map-height-map-textu
 import { MAIN_MAP_CONFIG } from "@/utils/config/mainMap.config";
 import { useDebug } from "@/composables/useDebug";
 import { Inspector } from "@babylonjs/inspector";
-
+import MainMapUi from "@/components/MainMapUi.vue";
+import { useUiStore } from "@/store/ui";
+import AppLoader from "@/components/AppLoader.vue";
 const CONFIG = MAIN_MAP_CONFIG;
+const uiStore = useUiStore();
+
 interface BuildingData {
   mesh: Mesh;
   position: Vector3;
@@ -63,6 +72,8 @@ const state = reactive<{
   animatedModels: AnimatedModelData[];
   selectedBuilding: BuildingData | null;
   modelCache: Map<string, Mesh>;
+  audioEngine: AudioEngine | null;
+  backgroundMusic: Sound | null;
 }>({
   engine: null,
   scene: null,
@@ -72,9 +83,33 @@ const state = reactive<{
   animatedModels: [],
   selectedBuilding: null,
   modelCache: new Map(),
+  audioEngine: null,
+  backgroundMusic: null,
 });
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
+const isGrabbing = ref(false);
+
+// Store event handler references for cleanup
+const handlePointerDown = (canvas: HTMLCanvasElement) => {
+  isGrabbing.value = true;
+  canvas.style.cursor = "grabbing";
+};
+const resetCursorState = (canvas: HTMLCanvasElement) => {
+  isGrabbing.value = false;
+  canvas.style.cursor = "grab";
+};
+const handlePointerUp = (canvas: HTMLCanvasElement) => {
+  resetCursorState(canvas);
+};
+const handlePointerLeave = (canvas: HTMLCanvasElement) => {
+  resetCursorState(canvas);
+};
+const handlePointerMove = (canvas: HTMLCanvasElement) => {
+  if (isGrabbing.value) {
+    canvas.style.cursor = "grabbing";
+  }
+};
 
 const {
   setupBuildingGizmoPosition,
@@ -275,55 +310,6 @@ const loadAnimatedModel = async (
     mesh.rotation = animatedConfig.rotation;
     mesh.scaling = animatedConfig.scale;
 
-    if (animatedConfig.isMoving && animatedConfig.path) {
-      const pathPoints = animatedConfig.path.points;
-      const duration = animatedConfig.path.duration;
-      const loop = animatedConfig.path.loop;
-
-      const positionAnimation = new Animation(
-        "positionAnimation",
-        "position",
-        30,
-        Animation.ANIMATIONTYPE_VECTOR3,
-        Animation.ANIMATIONLOOPMODE_CYCLE
-      );
-
-      const rotationAnimation = new Animation(
-        "rotationAnimation",
-        "rotation",
-        30,
-        Animation.ANIMATIONTYPE_VECTOR3,
-        Animation.ANIMATIONLOOPMODE_CYCLE
-      );
-
-      const positionKeyFrames = [];
-      const rotationKeyFrames = [];
-
-      for (let i = 0; i < pathPoints.length; i++) {
-        const frame = (i * duration * 30) / (pathPoints.length - 1);
-
-        positionKeyFrames.push({
-          frame,
-          value: pathPoints[i].position,
-        });
-
-        rotationKeyFrames.push({
-          frame: frame - 1,
-          value: pathPoints[i].rotation,
-        });
-
-        rotationKeyFrames.push({
-          frame,
-          value: pathPoints[i].rotation,
-        });
-      }
-      positionAnimation.setKeys(positionKeyFrames);
-      rotationAnimation.setKeys(rotationKeyFrames);
-      mesh.animations = [positionAnimation, rotationAnimation];
-
-      scene.beginAnimation(mesh, 0, duration * 30, loop);
-    }
-
     return {
       mesh,
       position: mesh.position,
@@ -387,13 +373,8 @@ const createGround = (scene: Scene): Mesh => {
   );
   ground.position.y = 0;
   const groundMat = new StandardMaterial("groundMat", scene);
-  try {
-    const texture = new Texture(mainMapHeightMapTexture);
-    groundMat.diffuseTexture = texture;
-  } catch (error) {
-    console.error("Failed to load ground texture:", error);
-    groundMat.diffuseColor = new Color3(0.2, 0.8, 0.2);
-  }
+  const texture = new Texture(mainMapHeightMapTexture);
+  groundMat.diffuseTexture = texture;
   ground.material = groundMat;
   ground.colission = true;
 
@@ -452,6 +433,41 @@ const handleBuildingClick = (mesh: Mesh): void => {
   }
 };
 
+const initAudio = async (): Promise<void> => {
+  state.audioEngine = await CreateAudioEngineAsync();
+  state.audioEngine.volume = 0;
+  state.backgroundMusic = await CreateStreamingSoundAsync(
+    "backgroundAmbient",
+    "/assets/sounds/background-ambient.mp3",
+    { autoplay: true, loop: true },
+    state.audioEngine
+  );
+};
+watch(
+  () => uiStore.volume,
+  (newVolume) => {
+    if (state.audioEngine) {
+      console.log("newVolume", newVolume);
+      state.audioEngine.volume = newVolume / 100;
+    }
+  },
+  {
+    immediate: true,
+  }
+);
+watch(
+  () => uiStore.isMuted,
+  (isMuted) => {
+    if (state.audioEngine) {
+      console.log("isMuted", isMuted);
+      state.audioEngine.volume = isMuted ? 0 : uiStore.volume / 100;
+    }
+  },
+  {
+    immediate: true,
+  }
+);
+
 // Update createScene to handle async building creation
 const createScene = async (): Promise<void> => {
   if (!canvasRef.value) return;
@@ -459,6 +475,12 @@ const createScene = async (): Promise<void> => {
   const canvas = canvasRef.value;
   state.engine = new Engine(canvas, true);
   state.scene = new Scene(state.engine);
+
+  // Add cursor event listeners
+  canvas.addEventListener("pointerdown", () => handlePointerDown(canvas));
+  canvas.addEventListener("pointerup", () => handlePointerUp(canvas));
+  canvas.addEventListener("pointerleave", () => handlePointerLeave(canvas));
+  canvas.addEventListener("pointermove", () => handlePointerMove(canvas));
 
   state.mainMapCamera = createCamera(state.scene, canvas);
 
@@ -476,6 +498,9 @@ const createScene = async (): Promise<void> => {
   state.buildings = await createBuildings(state.scene);
   state.environments = await createEnvironments(state.scene);
   state.animatedModels = await createAnimatedModels(state.scene);
+
+  await initAudio();
+
   // Adding Fog
   state.scene.fogMode = Scene.FOGMODE_LINEAR;
   state.scene.fogColor = new Color3(0.6, 0.6, 0.6);
@@ -504,16 +529,46 @@ const createScene = async (): Promise<void> => {
   state.engine.runRenderLoop(() => {
     state.scene?.render();
   });
-
   // Handle window resize
   window.addEventListener("resize", () => {
     state.engine?.resize();
   });
+  setTimeout(() => {
+    uiStore.setLoading(false);
+  }, 1000);
 };
 
 const cleanupScene = (): void => {
   if (state.engine) {
     state.engine.dispose();
+  }
+  if (state.backgroundMusic) {
+    state.backgroundMusic.dispose();
+  }
+  if (state.audioEngine) {
+    state.audioEngine.dispose();
+  }
+  if (canvasRef.value) {
+    canvasRef.value.removeEventListener("pointerdown", () => {
+      if (canvasRef.value) {
+        handlePointerDown(canvasRef.value);
+      }
+    });
+    canvasRef.value.removeEventListener("pointerup", () => {
+      if (canvasRef.value) {
+        handlePointerUp(canvasRef.value);
+      }
+    });
+    canvasRef.value.removeEventListener("pointerleave", () => {
+      if (canvasRef.value) {
+        handlePointerLeave(canvasRef.value);
+      }
+    });
+    canvasRef.value.removeEventListener("pointermove", () => {
+      if (canvasRef.value) {
+        handlePointerMove(canvasRef.value);
+      }
+    });
   }
   state.buildings.forEach((building) => {
     building.mesh.dispose();
@@ -549,5 +604,6 @@ onBeforeUnmount(() => {
 canvas {
   width: 100%;
   height: 100vh;
+  cursor: grab;
 }
 </style>
