@@ -29,6 +29,7 @@ import { useUiStore } from "@/store/ui";
 import { onMounted, onBeforeUnmount, ref, watch, nextTick } from "vue";
 import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
+import { useDebounceFn } from "@vueuse/core";
 
 gsap.registerPlugin(SplitText);
 
@@ -39,10 +40,10 @@ const titleRef = ref<HTMLElement | null>(null);
 let titleSplit: SplitText | null = null;
 let titleAnimation: gsap.core.Timeline | null = null;
 
-const handleVolumeChange = (event: Event) => {
+const handleVolumeChange = useDebounceFn((event: Event) => {
   const target = event.target as HTMLInputElement;
   uiStore.setVolume(Number(target.value));
-};
+}, 100);
 
 const handleStart = () => {
   uiStore.hideUi();
@@ -58,18 +59,39 @@ const menuItems = [
 ];
 
 const handleKeyDown = (event: KeyboardEvent) => {
-  if (event.key === "Escape") {
+  if (event.key === "Escape" && !uiStore.isUiVisible) {
     uiStore.showUi();
   }
 };
 
 const initTitleAnimation = () => {
   if (!titleRef.value) return;
+
+  if (titleAnimation) {
+    titleAnimation.kill();
+  }
+  if (titleSplit) {
+    titleSplit.revert();
+  }
+
   titleSplit = new SplitText(titleRef.value, { type: "chars" });
   titleAnimation = gsap.timeline({
     repeat: -1,
     repeatDelay: 2,
+    paused: true, // Start paused
+    onUpdate: () => {
+      if (titleRef.value) {
+        const rect = titleRef.value.getBoundingClientRect();
+        const isVisible = rect.top < window.innerHeight && rect.bottom >= 0;
+        if (isVisible) {
+          titleAnimation?.play();
+        } else {
+          titleAnimation?.pause();
+        }
+      }
+    },
   });
+
   titleSplit.chars.forEach((char, index) => {
     if (titleAnimation) {
       titleAnimation.to(
@@ -86,10 +108,33 @@ const initTitleAnimation = () => {
       );
     }
   });
+
+  if (uiStore.isUiVisible) {
+    titleAnimation.play();
+  }
 };
 
+let observer: IntersectionObserver | null = null;
+
 onMounted(() => {
-  window.addEventListener("keydown", handleKeyDown);
+  window.addEventListener("keydown", handleKeyDown, { passive: true });
+  observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          titleAnimation?.play();
+        } else {
+          titleAnimation?.pause();
+        }
+      });
+    },
+    { threshold: 0.1 }
+  );
+
+  if (titleRef.value) {
+    observer.observe(titleRef.value);
+  }
+
   nextTick(() => {
     initTitleAnimation();
   });
@@ -102,6 +147,9 @@ onBeforeUnmount(() => {
   }
   if (titleSplit) {
     titleSplit.revert();
+  }
+  if (observer) {
+    observer.disconnect();
   }
 });
 

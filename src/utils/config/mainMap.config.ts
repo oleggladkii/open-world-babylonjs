@@ -91,6 +91,19 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       interactible: false,
       size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(
+        28.67912483215332,
+        5.998289108276367,
+        60.562957763671875
+      ),
+      rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+      scale: new Vector3(1, 1.1, 1),
+      modelName: "house_05.glb",
+      highlightColor: new Color3(0.2, 0.2, 0.8),
+    },
+    {
+      interactible: false,
+      size: { width: 1, depth: 1, height: 1 },
+      position: new Vector3(
         47.210357666015625,
         5.667227268218994,
         41.224761962890625
@@ -123,9 +136,9 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     {
       interactible: false,
       position: new Vector3(
-        -64.78382110595703,
-        11.561641693115234,
-        -36.627166748046875
+        -61.86184310913086,
+        8.950078964233398,
+        -38.10206985473633
       ),
       rotation: new Vector3(0, 0, 0),
       scale: new Vector3(1, 1, 1),
@@ -144,30 +157,30 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     },
   ],
   animatedModels: [
-    {
-      modelName: "female-walk-loop.glb",
-      position: new Vector3(7.384357929229736, 6, 10.11191463470459),
-      rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-      scale: new Vector3(1.7, 1.7, 1.7),
-      animationName: "walk",
-      animationSpeed: 1,
-      loopAnimation: true,
-      isMoving: true,
-      path: {
-        points: [
-          {
-            position: new Vector3(7.384357929229736, 6, 10.11191463470459),
-            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-          },
-          {
-            position: new Vector3(58.13905334472656, 6, 10.11191463470459),
-            rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-          },
-        ],
-        duration: 6,
-        loop: true,
-      },
-    },
+    // {
+    //   modelName: "female-walk-loop.glb",
+    //   position: new Vector3(7.384357929229736, 6, 10.11191463470459),
+    //   rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+    //   scale: new Vector3(1.7, 1.7, 1.7),
+    //   animationName: "walk",
+    //   animationSpeed: 1,
+    //   loopAnimation: true,
+    //   isMoving: true,
+    //   path: {
+    //     points: [
+    //       {
+    //         position: new Vector3(7.384357929229736, 6, 10.11191463470459),
+    //         rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+    //       },
+    //       {
+    //         position: new Vector3(58.13905334472656, 6, 10.11191463470459),
+    //         rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+    //       },
+    //     ],
+    //     duration: 6,
+    //     loop: true,
+    //   },
+    // },
   ],
   baseColor: new Color3(0.6, 0.6, 0.6),
 };

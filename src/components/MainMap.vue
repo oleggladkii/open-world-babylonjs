@@ -28,6 +28,10 @@ import {
   AudioEngine,
   Sound,
 } from "@babylonjs/core";
+import {
+  CloudProceduralTexture,
+  GrassProceduralTexture,
+} from "@babylonjs/procedural-textures";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { GLTFFileLoader } from "@babylonjs/loaders/glTF";
 import mainMapHeightMap from "@/assets/textures/main-map-height-map.png";
@@ -150,18 +154,29 @@ const loadBuildingModel = async (
 ): Promise<BuildingData | null> => {
   try {
     const buildingConfig = CONFIG.buildings[index];
-    const result = await SceneLoader.ImportMeshAsync(
-      "",
-      "/assets/models/buildings/",
-      buildingConfig.modelName,
-      scene
-    );
-    const mesh = result.meshes[0];
-    if (!mesh) return null;
+    let mesh: Mesh;
+    if (state.modelCache.has(buildingConfig.modelName)) {
+      const cachedMesh = state.modelCache.get(buildingConfig.modelName);
+      if (!cachedMesh) return null;
+      mesh = cachedMesh.clone(`building_${index}`);
+    } else {
+      const result = await SceneLoader.ImportMeshAsync(
+        "",
+        "/assets/models/buildings/",
+        buildingConfig.modelName,
+        scene
+      );
+      mesh = result.meshes[0];
+      if (!mesh) return null;
+
+      state.modelCache.set(buildingConfig.modelName, mesh);
+    }
+
     mesh.id = `building_${index}`;
     mesh.position = buildingConfig.position;
     mesh.rotation = buildingConfig.rotation;
     mesh.scaling = buildingConfig.scale;
+
     return {
       mesh: mesh as Mesh,
       position: mesh.position,
@@ -375,8 +390,69 @@ const createGround = (scene: Scene): Mesh => {
   const groundMat = new StandardMaterial("groundMat", scene);
   const texture = new Texture(mainMapHeightMapTexture);
   groundMat.diffuseTexture = texture;
+  groundMat.specularColor = new Color3(0, 0, 0);
+  groundMat.ambientColor = new Color3(1, 1, 1);
   ground.material = groundMat;
-  ground.colission = true;
+  ground.receiveShadows = true;
+
+  const wallHeight = 30;
+  const wallConfig = {
+    height: wallHeight,
+    sideOrientation: Mesh.DOUBLESIDE,
+  };
+
+  const wallMaterial = new StandardMaterial("wallMat", scene);
+  const grassProcText = new GrassProceduralTexture("grass", 600, scene);
+  wallMaterial.ambientTexture = grassProcText;
+
+  // Create a group for all walls
+  const wallsGroup = new Mesh("wallsGroup", scene);
+  wallsGroup.isVisible = true;
+
+  const createWall = (
+    name: string,
+    width: number,
+    position: Vector3,
+    rotationY = 0
+  ) => {
+    const wall = MeshBuilder.CreatePlane(
+      name,
+      {
+        width,
+        ...wallConfig,
+      },
+      scene
+    );
+    wall.position = position;
+    wall.rotation.y = rotationY;
+    wall.material = wallMaterial;
+    wall.parent = wallsGroup;
+    return wall;
+  };
+
+  createWall(
+    "frontWall",
+    CONFIG.ground.width,
+    new Vector3(0, -(wallHeight / 2) + 7, CONFIG.ground.height / 2)
+  );
+  createWall(
+    "backWall",
+    CONFIG.ground.width,
+    new Vector3(0, -(wallHeight / 2) + 7, -CONFIG.ground.height / 2),
+    Math.PI
+  );
+  createWall(
+    "leftWall",
+    CONFIG.ground.height,
+    new Vector3(-CONFIG.ground.width / 2, -(wallHeight / 2) + 7, 0),
+    Math.PI / 2
+  );
+  createWall(
+    "rightWall",
+    CONFIG.ground.height,
+    new Vector3(CONFIG.ground.width / 2, -(wallHeight / 2) + 7, 0),
+    -Math.PI / 2
+  );
 
   if (CONFIG.debug.groundGrid) {
     createGroundGrid(scene, CONFIG.ground.width, CONFIG.ground.height);
@@ -394,20 +470,16 @@ const handleBuildingClick = (mesh: Mesh): void => {
   });
 
   if (!clickedBuilding) {
-    console.log("Clicked mesh is not a building:", {
-      position: mesh.position,
-      id: mesh.id,
-    });
     return;
   }
 
-  console.log("Clicked building:", {
-    position: clickedBuilding.position,
-    isInteractible:
-      CONFIG.buildings[state.buildings.indexOf(clickedBuilding)].interactible,
-    modelName:
-      CONFIG.buildings[state.buildings.indexOf(clickedBuilding)].modelName,
-  });
+  // console.log("Clicked building:", {
+  //   position: clickedBuilding.position,
+  //   isInteractible:
+  //     CONFIG.buildings[state.buildings.indexOf(clickedBuilding)].interactible,
+  //   modelName:
+  //     CONFIG.buildings[state.buildings.indexOf(clickedBuilding)].modelName,
+  // });
 
   if (state.selectedBuilding === clickedBuilding) {
     if (state.selectedBuilding.mesh.material instanceof StandardMaterial) {
@@ -447,7 +519,6 @@ watch(
   () => uiStore.volume,
   (newVolume) => {
     if (state.audioEngine) {
-      console.log("newVolume", newVolume);
       state.audioEngine.volume = newVolume / 100;
     }
   },
@@ -459,7 +530,6 @@ watch(
   () => uiStore.isMuted,
   (isMuted) => {
     if (state.audioEngine) {
-      console.log("isMuted", isMuted);
       state.audioEngine.volume = isMuted ? 0 : uiStore.volume / 100;
     }
   },
@@ -467,6 +537,28 @@ watch(
     immediate: true,
   }
 );
+
+const createClouds = (scene: Scene): Mesh => {
+  const cloudSphere = MeshBuilder.CreateSphere(
+    "cloudSphere",
+    { diameter: 600, segments: 10 },
+    scene
+  );
+  cloudSphere.position = new Vector3(0, 8, 0);
+  const cloudMaterial = new StandardMaterial("cloudMat", scene);
+  const cloudProcText = new CloudProceduralTexture("cloud", 600, scene);
+  cloudMaterial.emissiveTexture = cloudProcText;
+  cloudMaterial.diffuseTexture = cloudProcText;
+  cloudMaterial.opacityTexture = cloudProcText;
+  cloudMaterial.ambientTexture = cloudProcText;
+  cloudMaterial.backFaceCulling = false;
+  cloudMaterial.emissiveTexture.coordinatesMode = Texture.SKYBOX_MODE;
+  cloudMaterial.diffuseTexture.coordinatesMode = Texture.SKYBOX_MODE;
+  cloudMaterial.opacityTexture.coordinatesMode = Texture.SKYBOX_MODE;
+  cloudMaterial.ambientTexture.coordinatesMode = Texture.SKYBOX_MODE;
+  cloudSphere.material = cloudMaterial;
+  return cloudSphere;
+};
 
 // Update createScene to handle async building creation
 const createScene = async (): Promise<void> => {
@@ -494,18 +586,15 @@ const createScene = async (): Promise<void> => {
   }
   createGround(state.scene);
 
+  // Create clouds
+  createClouds(state.scene);
+
   // Load buildings, environments and animated models
   state.buildings = await createBuildings(state.scene);
   state.environments = await createEnvironments(state.scene);
   state.animatedModels = await createAnimatedModels(state.scene);
 
   await initAudio();
-
-  // Adding Fog
-  state.scene.fogMode = Scene.FOGMODE_LINEAR;
-  state.scene.fogColor = new Color3(0.6, 0.6, 0.6);
-  state.scene.fogStart = 120;
-  state.scene.fogEnd = 400;
 
   // Show Inspector
   if (CONFIG.debug.inspector) {
