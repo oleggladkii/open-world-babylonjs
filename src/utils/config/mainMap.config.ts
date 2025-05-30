@@ -15,7 +15,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     height: 200,
   },
   camera: {
-    initialRadius: 100,
+    initialRadius: 140,
     minRadius: 50,
     maxRadius: 200,
     panningSensibility: 50,
@@ -26,19 +26,6 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     edgeScrollThreshold: 20,
   },
   buildings: [
-    {
-      interactible: true,
-      size: { width: 1, depth: 1, height: 1 },
-      position: new Vector3(
-        -32.669307708740234,
-        6.305764675140381,
-        13.40317153930664
-      ),
-      rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-      scale: new Vector3(1, 1, 1),
-      modelName: "gas-station.glb",
-      highlightColor: new Color3(0.2, 0.8, 0.2),
-    },
     {
       interactible: true,
       size: { width: 1, depth: 1, height: 1 },
@@ -56,9 +43,9 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       interactible: true,
       size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(
-        67.75048828125,
-        5.981328964233398,
-        41.148685455322266
+        67.32683563232422,
+        4.681640148162842,
+        39.707645416259766
       ),
       rotation: new Vector3(0, Angle.FromDegrees(-90).radians(), 0),
       scale: new Vector3(-1.5, 1.6, 1.8),
@@ -66,21 +53,12 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       highlightColor: new Color3(0.8, 0.2, 0.2),
     },
     {
-      interactible: false,
-      size: { width: 1, depth: 1, height: 1 },
-      position: new Vector3(7.743345737457275, 5, 22),
-      rotation: new Vector3(0, 0, 0),
-      scale: new Vector3(1, 1.3, 1),
-      modelName: "house_02.glb",
-      highlightColor: new Color3(0.2, 0.2, 0.8),
-    },
-    {
-      interactible: false,
+      interactible: true,
       size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(
-        48.14057922363281,
+        47.964393615722656,
         5.998289108276367,
-        21.821447372436523
+        20.64552307128906
       ),
       rotation: new Vector3(0, 0, 0),
       scale: new Vector3(1.3, 1.3, 1),
@@ -88,45 +66,85 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       highlightColor: new Color3(0.2, 0.2, 0.8),
     },
     {
-      interactible: false,
+      interactible: true,
       size: { width: 1, depth: 1, height: 1 },
-      position: new Vector3(
-        28.67912483215332,
-        5.998289108276367,
-        60.562957763671875
-      ),
+      position: new Vector3(28.557052612304688, 5.998289108276367, 58.17578125),
       rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
       scale: new Vector3(1, 1.1, 1),
       modelName: "house_05.glb",
       highlightColor: new Color3(0.2, 0.2, 0.8),
     },
     {
-      interactible: false,
+      interactible: true,
       size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(
-        47.210357666015625,
-        5.667227268218994,
-        41.224761962890625
+        65.80436706542969,
+        4.476771259307861,
+        57.716957092285156
       ),
+      rotation: new Vector3(0, Angle.FromDegrees(180).radians(), 0),
+      scale: new Vector3(0.8, 1.1, 0.8),
+      modelName: "house_05.glb",
+      highlightColor: new Color3(0.2, 0.2, 0.8),
+    },
+    {
+      interactible: true,
+      size: { width: 1, depth: 1, height: 1 },
+      position: new Vector3(8.103761672973633, 5, 20.99594497680664),
       rotation: new Vector3(0, 0, 0),
-      scale: new Vector3(1.3, 1.3, 0.7),
+      scale: new Vector3(1, 1.3, 1),
       modelName: "house_02.glb",
       highlightColor: new Color3(0.2, 0.2, 0.8),
     },
     {
-      interactible: false,
+      interactible: true,
       size: { width: 1, depth: 1, height: 1 },
-      position: new Vector3(8.572281837463379, 6, 41.688819885253906),
+      position: new Vector3(9.999162673950195, 5, 57.27021408081055),
+      rotation: new Vector3(0, Angle.FromDegrees(180).radians(), 0),
+      scale: new Vector3(1, 1.3, 0.8),
+      modelName: "house_02.glb",
+      highlightColor: new Color3(0.2, 0.2, 0.8),
+    },
+    {
+      interactible: true,
+      size: { width: 1, depth: 1, height: 1 },
+      position: new Vector3(
+        47.210357666015625,
+        5.667227268218994,
+        40.78350067138672
+      ),
+      rotation: new Vector3(0, 0, 0),
+      scale: new Vector3(1.3, 1.3, 1),
+      modelName: "house_02.glb",
+      highlightColor: new Color3(0.2, 0.2, 0.8),
+    },
+    {
+      interactible: true,
+      size: { width: 1, depth: 1, height: 1 },
+      position: new Vector3(9.203802108764648, 6, 39.96675109863281),
       rotation: new Vector3(0, 0, 0),
       scale: new Vector3(1.4, 1.3, 0.9),
       modelName: "house_09.glb",
       highlightColor: new Color3(0.2, 0.2, 0.8),
     },
     {
-      interactible: false,
+      interactible: true,
       size: { width: 1, depth: 1, height: 1 },
-      position: new Vector3(49.12409210205078, 6, 60.03775405883789),
+      position: new Vector3(48.882816314697266, 6, 58.86723327636719),
       rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
+      scale: new Vector3(1.4, 1.3, 0.9),
+      modelName: "house_09.glb",
+      highlightColor: new Color3(0.2, 0.2, 0.8),
+    },
+    {
+      interactible: true,
+      size: { width: 1, depth: 1, height: 1 },
+      position: new Vector3(
+        66.1789321899414,
+        3.5620410442352295,
+        22.357759475708008
+      ),
+      rotation: new Vector3(0, Angle.FromDegrees(180).radians(), 0),
       scale: new Vector3(1.4, 1.3, 0.9),
       modelName: "house_09.glb",
       highlightColor: new Color3(0.2, 0.2, 0.8),
