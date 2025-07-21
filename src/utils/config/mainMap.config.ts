@@ -3,7 +3,7 @@ import { MapConfig } from "@/interfaces/MapConfig";
 
 export const MAIN_MAP_CONFIG: MapConfig = {
   debug: {
-    inspector: true,
+    inspector: process.env.NODE_ENV === "development",
     groundGrid: false,
     lightGizmo: false,
     gizmoPosition: false,
