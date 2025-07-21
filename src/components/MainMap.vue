@@ -29,11 +29,12 @@ import {
   AnimationGroup,
   CreateAudioEngineAsync,
   CreateStreamingSoundAsync,
-  AudioEngine,
+  AudioEngineV2,
   Sound,
   Animation,
   EasingFunction,
   CircleEase,
+  DirectionalLight,
 } from "@babylonjs/core";
 import {
   CloudProceduralTexture,
@@ -52,6 +53,9 @@ import MainMapUi from "@/components/MainMapUi.vue";
 import { useUiStore } from "@/store/ui";
 import AppLoader from "@/components/AppLoader.vue";
 import { useLakeWater } from "@/composables/useLakeWater";
+import type { SunLightConfig } from "@/interfaces/MapConfig";
+import { createPostProcessing } from "@/composables/usePostProcessing";
+
 const CONFIG = MAIN_MAP_CONFIG;
 const uiStore = useUiStore();
 
@@ -86,10 +90,13 @@ const state = reactive<{
   animatedModels: AnimatedModelData[];
   selectedBuilding: BuildingData | null;
   modelCache: Map<string, Mesh>;
-  audioEngine: AudioEngine | null;
+  audioEngine: AudioEngineV2 | null;
   backgroundMusic: Sound | null;
   clouds: ReturnType<typeof useClouds>["createParticleClouds"] | null;
   lakeWater: ReturnType<typeof useLakeWater>["createLakeWater"] | null;
+  sunSphere: Mesh | null;
+  sunLight: DirectionalLight | null;
+  orbitTime: number;
 }>({
   engine: null,
   scene: null,
@@ -103,6 +110,9 @@ const state = reactive<{
   backgroundMusic: null,
   clouds: null,
   lakeWater: null,
+  sunSphere: null,
+  sunLight: null,
+  orbitTime: 0,
 });
 
 // Hover state
@@ -553,6 +563,92 @@ const createAnimatedModels = async (
   return animatedModels;
 };
 
+// Update sun orbital animation
+const updateSunOrbit = () => {
+  if (!state.sunSphere || !state.sunLight) return;
+
+  state.orbitTime += 0.01; // Orbit speed
+
+  // Orbital parameters
+  const orbitRadius = 160;
+  const orbitHeight = 60;
+  const centerX = 0; // Center of the map
+  const centerZ = 0;
+
+  // Calculate new position in orbit
+  const x = centerX + Math.cos(state.orbitTime) * orbitRadius;
+  const z = centerZ + Math.sin(state.orbitTime) * orbitRadius;
+  const y = orbitHeight + Math.sin(state.orbitTime * 0.5) * 20; // Slight vertical variation
+
+  // Update sun sphere position
+  state.sunSphere.position.x = x;
+  state.sunSphere.position.y = y;
+  state.sunSphere.position.z = z;
+
+  // Update directional light direction to point towards center
+  const direction = new Vector3(-x, -y, -z).normalize();
+  state.sunLight.direction = direction;
+};
+
+// Add sun light and shadows using config
+const addSunLight = (scene: Scene, config?: SunLightConfig) => {
+  if (!config) return;
+
+  const sun = new DirectionalLight(
+    "sun",
+    new Vector3(config.direction.x, config.direction.y, config.direction.z),
+    scene
+  );
+  sun.intensity = config.intensity;
+  sun.diffuse = config.diffuse;
+  sun.specular = config.specular;
+
+  // Store reference to sun light for orbital updates
+  state.sunLight = sun;
+
+  // Add a visible yellow sun sphere at the sun's position
+  const sunSphere = MeshBuilder.CreateSphere(
+    "sunSphere",
+    { diameter: 20 },
+    scene
+  );
+
+  // Store reference to sun sphere for orbital animation
+  state.sunSphere = sunSphere;
+
+  // Set initial position
+  sunSphere.position = new Vector3(120, 60, 150);
+  const sunMaterial = new StandardMaterial("sunMat", scene);
+  sunMaterial.disableLighting = true;
+  sunMaterial.emissiveColor = new Color3(1, 0.85, 0.2); // bright yellow
+  sunMaterial.diffuseColor = new Color3(1, 0.85, 0.2);
+  sunMaterial.specularColor = new Color3(0, 0, 0);
+  sunSphere.material = sunMaterial;
+  sunSphere.isPickable = false;
+  sunSphere.receiveShadows = false;
+  sunSphere.isVisible = true;
+
+  if (config.shadowEnabled) {
+    // TODO: add shadows
+    // const shadowGenerator = new ShadowGenerator(config.shadowMapSize, sun);
+    // shadowGenerator.useBlurExponentialShadowMap = !!config.shadowBlur;
+    // shadowGenerator.blurKernel = config.shadowBlurKernel;
+    // shadowGenerator.setDarkness(config.shadowDarkness);
+    // Add shadow casters based on mesh name patterns
+    // scene.meshes.forEach((mesh) => {
+    //   if (mesh.receiveShadows !== undefined) mesh.receiveShadows = true;
+    //   if (
+    //     config.shadowCasterNamePatterns.some((pattern) =>
+    //       mesh.name.includes(pattern)
+    //     )
+    //   ) {
+    //     console.log("yes", mesh.name);
+    //     shadowGenerator.addShadowCaster(mesh, true);
+    //   }
+    // });
+  }
+};
+
 // Create the heightmap ground
 const createGround = (scene: Scene): Mesh => {
   const { createGround: createGroundMesh } = useGround();
@@ -588,7 +684,7 @@ const createGround = (scene: Scene): Mesh => {
     { radius: 300, tessellation: 10 },
     scene
   );
-  groundCircle.position = new Vector3(0, 0, 0);
+  groundCircle.position = new Vector3(0, 2, 0);
   groundCircle.rotation.x = Angle.FromDegrees(90).radians();
 
   const circleGroundMat = new StandardMaterial("circleGroundMat", scene);
@@ -704,32 +800,30 @@ const handleBuildingClick = (mesh: Mesh): void => {
 
 const initAudio = async (): Promise<void> => {
   state.audioEngine = await CreateAudioEngineAsync();
-  state.audioEngine.volume = 0;
   state.backgroundMusic = await CreateStreamingSoundAsync(
     "backgroundAmbient",
     "/assets/sounds/background-ambient.mp3",
-    { autoplay: true, loop: true },
-    state.audioEngine
+    { autoplay: true, loop: true, volume: 0 },
+    state.audioEngine as AudioEngineV2
   );
 };
 
 watch(
-  () => uiStore.volume,
+  () => uiStore.musicVolume,
   (newVolume) => {
-    if (state.audioEngine) {
-      state.audioEngine.volume = newVolume / 100;
+    if (state.backgroundMusic) {
+      state.backgroundMusic.volume = newVolume / 100;
     }
   },
   {
     immediate: true,
   }
 );
-
 watch(
-  () => uiStore.isMuted,
+  () => uiStore.isMusicMuted,
   (isMuted) => {
-    if (state.audioEngine) {
-      state.audioEngine.volume = isMuted ? 0 : uiStore.volume / 100;
+    if (state.backgroundMusic) {
+      state.backgroundMusic.volume = isMuted ? 0 : uiStore.musicVolume / 100;
     }
   },
   {
@@ -791,6 +885,7 @@ const createScene = async (): Promise<void> => {
   }
   const ground = createGround(state.scene);
 
+  await initAudio();
   // Create clouds
   const { createParticleClouds } = useClouds();
   state.clouds = createParticleClouds(state.scene);
@@ -798,12 +893,12 @@ const createScene = async (): Promise<void> => {
 
   // Create lake water
   const { createLakeWater } = useLakeWater();
-  state.lakeWater = createLakeWater(state.scene, {
-    size: 73,
+  state.lakeWater = await createLakeWater(state.scene, state.audioEngine, {
+    size: 78,
     subdivisions: 20,
-    position: new Vector3(43, 5.8, -51),
-    waveHeight: 0.02,
-    bumpHeight: 20,
+    position: new Vector3(43.9, 3.2, -49.9),
+    waveHeight: 0.2,
+    bumpHeight: 0.8,
     waterColor: new Color3(0.1, 0.4, 0.8),
     colorBlendFactor: 0.5,
   });
@@ -821,7 +916,8 @@ const createScene = async (): Promise<void> => {
   state.environments = await createEnvironments(state.scene);
   state.animatedModels = await createAnimatedModels(state.scene);
 
-  await initAudio();
+  // Add sun light and shadows
+  addSunLight(state.scene, CONFIG.sunLight);
 
   // Show Inspector
   if (CONFIG.debug.inspector) {
@@ -850,8 +946,13 @@ const createScene = async (): Promise<void> => {
     }
   });
 
+  createPostProcessing(state.scene, state.mainMapCamera);
+
   // Start render loop
   state.engine.runRenderLoop(() => {
+    // Update orbital animation
+    updateSunOrbit();
+
     state.scene?.render();
   });
 
@@ -863,7 +964,7 @@ const createScene = async (): Promise<void> => {
 
   setTimeout(() => {
     uiStore.setLoading(false);
-  }, 1000);
+  }, 1);
 };
 
 const cleanupScene = (): void => {

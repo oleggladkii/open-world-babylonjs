@@ -1,3 +1,4 @@
+import { useUiStore } from "@/store/ui";
 import {
   Scene,
   Mesh,
@@ -6,8 +7,14 @@ import {
   Texture,
   Color3,
   MeshBuilder,
+  PointerInfo,
+  PointerEventTypes,
+  AudioEngineV2,
+  CreateStreamingSoundAsync,
+  StreamingSound,
 } from "@babylonjs/core";
 import { WaterMaterial } from "@babylonjs/materials";
+import { watch } from "vue";
 
 interface LakeWaterOptions {
   size?: number;
@@ -22,15 +29,16 @@ interface LakeWaterOptions {
 }
 
 export const useLakeWater = () => {
-  const createLakeWater = (
+  const createLakeWater = async (
     scene: Scene,
+    audioEngine: AudioEngineV2,
     options: LakeWaterOptions = {}
-  ): {
+  ): Promise<{
     waterMesh: Mesh;
     waterMaterial: WaterMaterial;
     addReflectionTarget: (mesh: Mesh) => void;
     dispose: () => void;
-  } => {
+  }> => {
     const {
       size = 100,
       subdivisions = 10,
@@ -43,6 +51,8 @@ export const useLakeWater = () => {
       bumpTextureUrl = "/assets/textures/waterbump.png",
     } = options;
 
+    const uiStore = useUiStore();
+
     // Create water mesh
     const waterMesh = MeshBuilder.CreateDisc(
       "waterMesh",
@@ -53,9 +63,8 @@ export const useLakeWater = () => {
       scene
     );
     waterMesh.position = position;
-    waterMesh.rotation.x = Math.PI / 2; // Rotate to be horizontal
+    waterMesh.rotation.x = Math.PI / 2;
 
-    // Create water material
     const waterMaterial = new WaterMaterial(
       "water",
       scene,
@@ -69,10 +78,63 @@ export const useLakeWater = () => {
     waterMaterial.waterColor = waterColor;
     waterMaterial.colorBlendFactor = colorBlendFactor;
 
-    // Apply material to mesh
     waterMesh.material = waterMaterial;
+    waterMesh.visibility = 0.97;
+    waterMesh.renderingGroupId = 1;
 
-    // Add reflection targets
+    let waterSound: StreamingSound | null = null;
+    if (audioEngine) {
+      try {
+        waterSound = await CreateStreamingSoundAsync(
+          "waterDrip",
+          "assets/sounds/water-drip.mp3",
+          {
+            loop: false,
+            autoplay: false,
+          },
+          audioEngine
+        );
+        console.log("Water sound loaded successfully");
+      } catch (error) {
+        console.error("Failed to load water sound:", error);
+      }
+    }
+    watch(
+      () => uiStore.soundsVolume,
+      (newVolume) => {
+        if (waterSound) {
+          waterSound.volume = newVolume / 100;
+        }
+      },
+      {
+        immediate: true,
+      }
+    );
+    watch(
+      () => uiStore.isSoundsMuted,
+      (isMuted) => {
+        if (waterSound) {
+          waterSound.volume = isMuted ? 0 : uiStore.soundsVolume / 100;
+        }
+      },
+      {
+        immediate: true,
+      }
+    );
+
+    scene.onPointerObservable.add((pointerInfo: PointerInfo) => {
+      if (pointerInfo.type === PointerEventTypes.POINTERDOWN) {
+        if (
+          pointerInfo.pickInfo?.hit &&
+          pointerInfo.pickInfo.pickedMesh === waterMesh
+        ) {
+          if (waterSound) {
+            waterSound.play();
+          }
+        }
+      }
+    });
+
     const addReflectionTarget = (mesh: Mesh) => {
       waterMaterial.addToRenderList(mesh);
     };
@@ -82,6 +144,9 @@ export const useLakeWater = () => {
       waterMaterial,
       addReflectionTarget,
       dispose: () => {
+        if (waterSound) {
+          waterSound.dispose();
+        }
         waterMesh.dispose();
         waterMaterial.dispose();
       },

@@ -41,6 +41,7 @@ export const useGround = () => {
         },
         scene
       );
+      ground.receiveShadows = true;
     } else {
       ground = MeshBuilder.CreateGround(
         config.name || "ground",

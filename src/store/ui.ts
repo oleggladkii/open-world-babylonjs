@@ -2,30 +2,42 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 
 export const useUiStore = defineStore("ui", () => {
-  const volume = ref(30);
-  const isMuted = ref(true);
+  const musicVolume = ref(20);
+  const soundsVolume = ref(20);
+  const isMusicMuted = ref(true);
+  const isSoundsMuted = ref(true);
   const isUiVisible = ref(true);
   const isLoading = ref(true);
 
-  const setVolume = (value: number) => {
-    volume.value = Math.max(0, Math.min(100, value));
-    isMuted.value = volume.value === 0;
+  const setMusicVolume = (value: number) => {
+    musicVolume.value = Math.max(0, Math.min(100, value));
+    isMusicMuted.value = musicVolume.value === 0;
   };
 
-  const toggleMute = () => (isMuted.value = !isMuted.value);
+  const setSoundsVolume = (value: number) => {
+    soundsVolume.value = Math.max(0, Math.min(100, value));
+    isSoundsMuted.value = soundsVolume.value === 0;
+  };
+
+  const toggleMusicMute = () => (isMusicMuted.value = !isMusicMuted.value);
+  const toggleSoundsMute = () => (isSoundsMuted.value = !isSoundsMuted.value);
   const hideUi = () => (isUiVisible.value = false);
   const showUi = () => (isUiVisible.value = true);
   const setLoading = (value: boolean) => (isLoading.value = value);
 
   return {
     // State
-    volume,
-    isMuted,
+    musicVolume,
+    soundsVolume,
+    isMusicMuted,
+    isSoundsMuted,
     isUiVisible,
     isLoading,
     // Actions
-    setVolume,
-    toggleMute,
+    setMusicVolume,
+    setSoundsVolume,
+    toggleMusicMute,
+    toggleSoundsMute,
     hideUi,
     showUi,
     setLoading,

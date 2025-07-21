@@ -6,6 +6,16 @@ const routes: Array<RouteRecordRaw> = [
     name: "Home",
     component: () => import("@/views/HomeView.vue"),
   },
+  // {
+  //   path: "/test",
+  //   name: "Test",
+  //   component: () => import("@/views/TestView.vue"),
+  // },
+  {
+    path: "/:catchAll(.*)",
+    name: "All",
+    component: () => import("@/views/NotFoundView.vue"),
+  },
 ];
 
 export default routes;

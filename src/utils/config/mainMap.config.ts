@@ -3,7 +3,7 @@ import { MapConfig } from "@/interfaces/MapConfig";
 
 export const MAIN_MAP_CONFIG: MapConfig = {
   debug: {
-    inspector: false,
+    inspector: true,
     groundGrid: false,
     lightGizmo: false,
     gizmoPosition: false,
@@ -15,7 +15,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     height: 200,
   },
   camera: {
-    initialRadius: 140,
+    initialRadius: 180,
     minRadius: 50,
     maxRadius: 200,
     panningSensibility: 50,
@@ -26,32 +26,6 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     edgeScrollThreshold: 20,
   },
   buildings: [
-    {
-      interactible: true,
-      size: { width: 1, depth: 1, height: 1 },
-      position: new Vector3(
-        28.641725540161133,
-        6.099999904632568,
-        47.50614929199219
-      ),
-      rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
-      scale: new Vector3(2.3, 1.6, -1.8),
-      modelName: "city-hall.glb",
-      highlightColor: new Color3(0.8, 0.2, 0.2),
-    },
-    {
-      interactible: true,
-      size: { width: 1, depth: 1, height: 1 },
-      position: new Vector3(
-        67.32683563232422,
-        4.681640148162842,
-        39.707645416259766
-      ),
-      rotation: new Vector3(0, Angle.FromDegrees(-90).radians(), 0),
-      scale: new Vector3(-1.5, 1.6, 1.8),
-      modelName: "cinema.glb",
-      highlightColor: new Color3(0.8, 0.2, 0.2),
-    },
     {
       interactible: true,
       size: { width: 1, depth: 1, height: 1 },
@@ -151,28 +125,26 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     },
   ],
   environments: [
-    {
-      interactible: false,
-      position: new Vector3(
-        -61.86184310913086,
-        8.950078964233398,
-        -38.10206985473633
-      ),
-      rotation: new Vector3(0, 0, 0),
-      scale: new Vector3(1, 1, 1),
-      modelName: "pine-tree.glb",
-    },
-    {
-      interactible: false,
-      position: new Vector3(
-        -33.72332000732422,
-        10.352472305297852,
-        -48.158836364746094
-      ),
-      rotation: new Vector3(0, Angle.FromDegrees(80).radians(), 0),
-      scale: new Vector3(1, 1, 1),
-      modelName: "pine-tree.glb",
-    },
+    // {
+    //   position: new Vector3(
+    //     -61.86184310913086,
+    //     8.950078964233398,
+    //     -38.10206985473633
+    //   ),
+    //   rotation: new Vector3(0, 0, 0),
+    //   scale: new Vector3(1, 1, 1),
+    //   modelName: "pine-tree.glb",
+    // },
+    // {
+    //   position: new Vector3(
+    //     -33.72332000732422,
+    //     10.352472305297852,
+    //     -48.158836364746094
+    //   ),
+    //   rotation: new Vector3(0, Angle.FromDegrees(80).radians(), 0),
+    //   scale: new Vector3(1, 1, 1),
+    //   modelName: "pine-tree.glb",
+    // },
   ],
   animatedModels: [
     // {
@@ -201,4 +173,18 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     // },
   ],
   baseColor: new Color3(0.6, 0.6, 0.6),
+  sunLight: {
+    enabled: true,
+    position: new Vector3(120, 60, 150),
+    direction: new Vector3(0, -0.12186115235090256, -5),
+    intensity: 10,
+    diffuse: new Color3(1, 1, 0.9),
+    specular: new Color3(1, 1, 1),
+    shadowEnabled: true,
+    shadowMapSize: 1024,
+    shadowBlur: true,
+    shadowBlurKernel: 32,
+    shadowDarkness: 0.2,
+    shadowCasterNamePatterns: ["building_"],
+  },
 };

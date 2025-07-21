@@ -47,7 +47,6 @@ export interface MapEnvironmentConfig {
   position: Vector3;
   rotation: Vector3;
   scale: Vector3;
-  interactible: boolean;
 }
 
 export interface MapAnimatedModelConfig {
@@ -70,6 +69,21 @@ export interface MapAnimatedModelConfig {
   };
 }
 
+export interface SunLightConfig {
+  enabled: boolean;
+  position: Vector3;
+  direction: Vector3;
+  intensity: number;
+  diffuse: Color3;
+  specular: Color3;
+  shadowEnabled: boolean;
+  shadowMapSize: number;
+  shadowBlur: boolean;
+  shadowBlurKernel: number;
+  shadowDarkness: number;
+  shadowCasterNamePatterns: string[]; // e.g. ["House", "Roof"]
+}
+
 export interface MapConfig {
   debug: MapDebugConfig;
   ground: MapGroundConfig;
@@ -78,4 +92,5 @@ export interface MapConfig {
   environments: MapEnvironmentConfig[];
   animatedModels: MapAnimatedModelConfig[];
   baseColor: Color3;
+  sunLight?: SunLightConfig;
 }
