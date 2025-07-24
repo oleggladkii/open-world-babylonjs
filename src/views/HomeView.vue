@@ -1,11 +1,11 @@
 <template lang="pug">
 .home
   .scene-container
-    MainMap
+    VillageMap
 </template>
 
 <script setup lang="ts">
-import MainMap from "@/components/MainMap.vue";
+import VillageMap from "@/components/VillageMap.vue";
 </script>
 
 <style scoped>

@@ -94,7 +94,6 @@ export const useLakeWater = () => {
           },
           audioEngine
         );
-        console.log("Water sound loaded successfully");
       } catch (error) {
         console.error("Failed to load water sound:", error);
       }

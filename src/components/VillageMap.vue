@@ -124,7 +124,6 @@ const handlePointerMove = (canvas: HTMLCanvasElement, e: PointerEvent) => {
 
 const animateCameraToBuilding = (building: BuildingData): void => {
   if (!state.mainMapCamera || !state.scene || isCameraAnimating.value) return;
-  console.log("animateCameraToBuilding");
   isCameraAnimating.value = true;
   const camera = state.mainMapCamera;
   const targetPosition = building.position.clone();
@@ -498,7 +497,6 @@ const addSunLight = (scene: Scene, config?: SunLightConfig) => {
     state.shadowGenerator = shadowGenerator;
     scene.meshes.forEach((mesh) => {
       if (mesh.receiveShadows !== undefined) mesh.receiveShadows = true;
-      console.log("Adding shadow caster:", mesh.name);
       shadowGenerator.addShadowCaster(mesh, true);
     });
   }
