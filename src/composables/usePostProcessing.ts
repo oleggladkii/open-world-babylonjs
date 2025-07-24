@@ -12,7 +12,7 @@ export function createPostProcessing(scene: Scene, camera: ArcRotateCamera) {
     [camera]
   );
   pipeline.imageProcessingEnabled = true;
-  pipeline.imageProcessing.contrast = 1.1;
+  pipeline.imageProcessing.contrast = 1.4;
   pipeline.imageProcessing.exposure = 1.05;
   pipeline.imageProcessing.toneMappingEnabled = true;
   pipeline.imageProcessing.toneMappingType =

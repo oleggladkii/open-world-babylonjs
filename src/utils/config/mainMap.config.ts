@@ -62,7 +62,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       highlightColor: new Color3(0.2, 0.2, 0.8),
     },
     {
-      interactible: true,
+      interactible: false,
       size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(8.103761672973633, 5, 20.99594497680664),
       rotation: new Vector3(0, 0, 0),
@@ -71,7 +71,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       highlightColor: new Color3(0.2, 0.2, 0.8),
     },
     {
-      interactible: true,
+      interactible: false,
       size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(9.999162673950195, 5, 57.27021408081055),
       rotation: new Vector3(0, Angle.FromDegrees(180).radians(), 0),
@@ -80,7 +80,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       highlightColor: new Color3(0.2, 0.2, 0.8),
     },
     {
-      interactible: true,
+      interactible: false,
       size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(
         47.210357666015625,
@@ -93,7 +93,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       highlightColor: new Color3(0.2, 0.2, 0.8),
     },
     {
-      interactible: true,
+      interactible: false,
       size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(9.203802108764648, 6, 39.96675109863281),
       rotation: new Vector3(0, 0, 0),
@@ -102,7 +102,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       highlightColor: new Color3(0.2, 0.2, 0.8),
     },
     {
-      interactible: true,
+      interactible: false,
       size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(48.882816314697266, 6, 58.86723327636719),
       rotation: new Vector3(0, Angle.FromDegrees(90).radians(), 0),
@@ -111,7 +111,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       highlightColor: new Color3(0.2, 0.2, 0.8),
     },
     {
-      interactible: true,
+      interactible: false,
       size: { width: 1, depth: 1, height: 1 },
       position: new Vector3(
         66.1789321899414,
@@ -144,6 +144,66 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     //   rotation: new Vector3(0, Angle.FromDegrees(80).radians(), 0),
     //   scale: new Vector3(1, 1, 1),
     //   modelName: "pine-tree.glb",
+    // },
+    // {
+    //   position: new Vector3(
+    //     28.068470001220703,
+    //     8.519057273864746,
+    //     20.11153221130371
+    //   ),
+    //   rotation: new Vector3(0, 0, 0),
+    //   scale: new Vector3(6, 6, 6),
+    //   modelName: "fountain.glb",
+    // },
+    // {
+    //   position: new Vector3(
+    //     -4.730676651000977,
+    //     9.393752098083496,
+    //     11.55774211883545
+    //   ),
+    //   rotation: new Vector3(0, 0, 0),
+    //   scale: new Vector3(5, 5, 5),
+    //   modelName: "low-poly-green-tree.glb",
+    // },
+    // {
+    //   position: new Vector3(
+    //     77.33575439453125,
+    //     9.393752098083496,
+    //     16.427106857299805
+    //   ),
+    //   rotation: new Vector3(0, 0, 0),
+    //   scale: new Vector3(5, 5, 5),
+    //   modelName: "low-poly-green-tree.glb",
+    // },
+    // {
+    //   position: new Vector3(
+    //     -17.530553817749023,
+    //     9.393752098083496,
+    //     21.5806884765625
+    //   ),
+    //   rotation: new Vector3(0, 0, 0),
+    //   scale: new Vector3(5, 5, 5),
+    //   modelName: "low-poly-green-tree.glb",
+    // },
+    // {
+    //   position: new Vector3(
+    //     -27.284027099609375,
+    //     9.393752098083496,
+    //     -10.607046127319336
+    //   ),
+    //   rotation: new Vector3(0, 0, 0),
+    //   scale: new Vector3(5, 5, 5),
+    //   modelName: "low-poly-green-tree.glb",
+    // },
+    // {
+    //   position: new Vector3(
+    //     68.51819610595703,
+    //     9.393752098083496,
+    //     3.2005398273468018
+    //   ),
+    //   rotation: new Vector3(0, 0, 0),
+    //   scale: new Vector3(5, 5, 5),
+    //   modelName: "low-poly-green-tree.glb",
     // },
   ],
   animatedModels: [
@@ -185,6 +245,6 @@ export const MAIN_MAP_CONFIG: MapConfig = {
     shadowBlur: true,
     shadowBlurKernel: 32,
     shadowDarkness: 0.2,
-    shadowCasterNamePatterns: ["building_"],
+    shadowCasterNamePatterns: ["building_", "env_", "animated_"],
   },
 };
