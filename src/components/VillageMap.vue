@@ -1,7 +1,7 @@
 <template lang="pug">
 .wrapper
-  //- app-loader(v-if="uiStore.isLoading")
-  //- main-map-ui(v-else)
+  app-loader(v-if="uiStore.isLoading")
+  main-map-ui(v-else)
   canvas(ref="canvasRef")
   walking-female(
     v-if="sceneRef && addShadowCasterRef"
@@ -34,6 +34,11 @@
     :scene="sceneRef"
     :add-shadow-caster="addShadowCasterRef"
   )
+  birds(
+    v-if="sceneRef && addShadowCasterRef"
+    :scene="sceneRef"
+    :add-shadow-caster="addShadowCasterRef"
+  )
 </template>
 
 <script setup lang="ts">
@@ -61,10 +66,15 @@ import StreetBench from "@/components/StreetBench.vue";
 import HouseOne from "@/components/HouseOne.vue";
 import IdleMale from "@/components/IdleMale.vue";
 import TreeNature from "@/components/TreeNature.vue";
+import Birds from "@/components/Birds.vue";
+import { useUiStore } from "@/store/ui";
 import "@babylonjs/inspector";
 import grassTextureUrl from "../assets/textures/grass.jpg";
+import AppLoader from "@/components/AppLoader.vue";
+import MainMapUi from "@/components/MainMapUi.vue";
 
 const canvasRef = ref<HTMLCanvasElement>();
+const uiStore = useUiStore();
 
 let engine: Engine | null = null;
 let scene: Scene | null = null;
@@ -269,63 +279,6 @@ const createRTSScene = async () => {
   // Create roads using composable
   createRoads(scene);
 
-  // Load and instance tree models for optimization
-  // try {
-  //   const treeResult = await loadModel(scene, {
-  //     fileName: "street-lamp.glb",
-  //     rootUrl: "/assets/models/environments/",
-  //     position: new Vector3(0, 0, 0),
-  //     scaling: new Vector3(1, 1, 1),
-  //     name: "tree",
-  //   });
-
-  //   if (treeResult && treeResult.meshes.length > 0) {
-  //     // Find the main tree mesh (usually the largest or first non-root mesh)
-  //     let originalTree: Mesh | null = null;
-
-  //     for (const mesh of treeResult.meshes) {
-  //       if (mesh instanceof Mesh && mesh.getTotalVertices() > 0) {
-  //         originalTree = mesh;
-  //         break;
-  //       }
-  //     }
-
-  //     if (originalTree) {
-  //       originalTree.receiveShadows = true;
-  //       originalTree.scaling = new Vector3(7, 7, 7);
-  //       addShadowCaster(originalTree);
-
-  //       // Create tree positions
-  //       const treePositions = [
-  //         new Vector3(15, 6.6, 15),
-  //         new Vector3(15, 6.6, -15),
-  //         new Vector3(-15, 6.6, -15),
-  //         new Vector3(0, 6.6, 20),
-  //         new Vector3(25, 6.6, -22),
-  //       ];
-
-  //       // Position original tree at first location
-  //       originalTree.position = treePositions[0];
-  //       // Create instances for remaining positions
-  //       for (let i = 1; i < treePositions.length; i++) {
-  //         const treeInstance = originalTree.createInstance(
-  //           `tree_instance_${i}`,
-  //         );
-  //         treeInstance.position = treePositions[i];
-  //         treeInstance.receiveShadows = true;
-  //         treeInstance.scaling = new Vector3(7, 7, 7);
-  //         addShadowCaster(treeInstance);
-  //         // Add random rotation for variety
-  //         treeInstance.rotation.y = Math.random() * Math.PI * 2;
-  //       }
-  //     }
-  //   }
-  // } catch (error) {
-  //   console.warn("Failed to load tree models:", error);
-  // }
-
-  // House loading is now handled by HouseOne component
-
   // Handle window resize
   const handleResize = () => {
     if (engine) {
@@ -361,6 +314,9 @@ onMounted(async () => {
       }
     };
   }
+  setTimeout(() => {
+    uiStore.setLoading(false);
+  }, 1500);
 });
 
 onUnmounted(() => {

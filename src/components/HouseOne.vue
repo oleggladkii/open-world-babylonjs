@@ -39,8 +39,6 @@ const createHouse = async () => {
         props.addShadowCaster(mesh);
         houseInstance.push(mesh);
       });
-
-      console.log(`Loaded house with ${houseResult.meshes.length} meshes`);
     }
   } catch (error) {
     console.warn("Failed to load red roof house:", error);

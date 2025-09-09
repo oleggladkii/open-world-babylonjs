@@ -4,21 +4,20 @@
   .main-title(ref="titleRef") Powered by Babylon.js
   .about-container(ref="aboutContainer")
     .camera-controls-panel
-      .controls-section(style="min-height: 231px")
+      .controls-section
         h5 About
-        p(ref="aboutText1") This is a demo project built with Babylon.js, showcasing some of the capabilities of this powerful WebGL engine. It highlights features like real-time lighting, interactive 3D environments, water and cloud effects, and smooth camera transitions.
-        p(ref="aboutText2") The goal of the project is to demonstrate how Babylon.js can be used to create rich, immersive 3D experiences on the web with minimal performance overhead.
-      .controls-section(style="min-height: 195px")
+        p This is a demo project built with Babylon.js, showcasing the capabilities of a powerful WebGL engine for interactive 3D environments on the web. It highlights features like real-time lighting, smooth camera transitions, animations and more.
+      .controls-section
         h5 Used technologies
         p 
           strong Babylon.js
-          span(ref="aboutText3") - core WebGL engine for rendering 3D environments, lighting, materials, animations, and camera control
+          span - core WebGL engine for rendering 3D environments, lighting, materials, animations, and camera control
         p 
           strong GSAP
-          span(ref="aboutText4") — used for smooth UI transitions and advanced timeline-based animations
+          span — used for smooth UI transitions and advanced timeline-based animations
         p 
           strong Vue 3
-          span(ref="aboutText5") - reactive UI framework used to manage components and UI state
+          span - reactive UI framework used to manage components and UI state
       button.back-button(@click="isShowAbout = false") Back
   .main-controls(ref="menuContainer")
     template(v-if="isShowControls")
@@ -28,9 +27,9 @@
           .control-row
             .control-input Left click + drag
             .control-action Rotate camera around target
-          .control-row
-            .control-input Right click + drag
-            .control-action Pan camera (move target)
+          //- .control-row
+          //-   .control-input Right click + drag
+          //-   .control-action Pan camera (move target)
           .control-row
             .control-input Mouse wheel
             .control-action Zoom in/out
@@ -80,27 +79,25 @@ import { useUiStore } from "@/store/ui";
 import { onMounted, onBeforeUnmount, ref, watch, nextTick } from "vue";
 import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
-import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 import { useDebounceFn } from "@vueuse/core";
 
-gsap.registerPlugin(SplitText, ScrambleTextPlugin);
-
 const uiStore = useUiStore();
+const backgroundMusic = ref<HTMLAudioElement | null>(null);
 const menuContainer = ref<HTMLElement | null>(null);
 const menuItemsRefs = ref<HTMLElement[]>([]);
 const titleRef = ref<HTMLElement | null>(null);
 const aboutContainer = ref<HTMLElement | null>(null);
-const aboutText1 = ref<HTMLElement | null>(null);
-const aboutText2 = ref<HTMLElement | null>(null);
-const aboutText3 = ref<HTMLElement | null>(null);
-const aboutText4 = ref<HTMLElement | null>(null);
-const aboutText5 = ref<HTMLElement | null>(null);
 let titleSplit: SplitText | null = null;
 let titleAnimation: gsap.core.Timeline | null = null;
 
 const handleMusicVolumeChange = useDebounceFn((event: Event) => {
   const target = event.target as HTMLInputElement;
   uiStore.setMusicVolume(Number(target.value));
+  // Update background music volume
+  if (backgroundMusic.value) {
+    const volume = uiStore.isMusicMuted ? 0 : Number(target.value) / 100;
+    backgroundMusic.value.volume = volume;
+  }
 }, 100);
 
 const handleSoundsVolumeChange = useDebounceFn((event: Event) => {
@@ -109,38 +106,12 @@ const handleSoundsVolumeChange = useDebounceFn((event: Event) => {
 }, 100);
 
 const handleStart = () => {
+  startBackgroundMusic();
   uiStore.hideUi();
 };
 
 const isShowAbout = ref(false);
 const isShowControls = ref(false);
-
-const initScrambleTextEffect = () => {
-  const textElements = [
-    aboutText1.value,
-    aboutText2.value,
-    aboutText3.value,
-    aboutText4.value,
-    aboutText5.value,
-  ].filter(Boolean);
-
-  textElements.forEach((element, index) => {
-    if (element && element.textContent) {
-      gsap.to(element, {
-        duration: 2,
-        scrambleText: {
-          text: element.textContent,
-          chars:
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?~",
-          revealDelay: 0.1,
-          speed: 1,
-          newClass: "scrambled",
-        },
-        delay: index * 0.3,
-      });
-    }
-  });
-};
 
 const menuItems = [
   { label: "Start", action: handleStart },
@@ -151,6 +122,39 @@ const menuItems = [
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === "Escape" && !uiStore.isUiVisible) {
     uiStore.showUi();
+  }
+};
+
+// Initialize background music
+const initBackgroundMusic = async () => {
+  try {
+    backgroundMusic.value = new Audio("/assets/sounds/background-ambient.mp3");
+    backgroundMusic.value.loop = true;
+    backgroundMusic.value.volume = uiStore.isMusicMuted
+      ? 0
+      : uiStore.musicVolume / 100;
+
+    backgroundMusic.value.addEventListener("canplaythrough", () => {
+      console.log("Background music loaded and ready");
+    });
+
+    backgroundMusic.value.addEventListener("error", (error: Event) => {
+      console.error("Failed to load background music:", error);
+    });
+
+    // Load the audio but don't autoplay
+    backgroundMusic.value.load();
+  } catch (error) {
+    console.error("Failed to initialize background music:", error);
+  }
+};
+
+// Start background music (called on user interaction)
+const startBackgroundMusic = () => {
+  if (backgroundMusic.value && backgroundMusic.value.readyState >= 2) {
+    backgroundMusic.value.play().catch((error: Error) => {
+      console.error("Failed to start background music:", error);
+    });
   }
 };
 
@@ -194,7 +198,7 @@ const initTitleAnimation = () => {
           yoyo: true,
           repeat: 1,
         },
-        0
+        0,
       );
     }
   });
@@ -218,7 +222,7 @@ onMounted(() => {
         }
       });
     },
-    { threshold: 0.1 }
+    { threshold: 0.1 },
   );
 
   if (titleRef.value) {
@@ -227,6 +231,7 @@ onMounted(() => {
 
   nextTick(() => {
     initTitleAnimation();
+    initBackgroundMusic();
   });
 });
 
@@ -240,6 +245,12 @@ onBeforeUnmount(() => {
   }
   if (observer) {
     observer.disconnect();
+  }
+  // Cleanup audio
+  if (backgroundMusic.value) {
+    backgroundMusic.value.pause();
+    backgroundMusic.value.src = "";
+    backgroundMusic.value = null;
   }
 });
 
@@ -259,7 +270,7 @@ watch(
       gsap.fromTo(
         menuContainer.value,
         { opacity: 0, scale: 0.9 },
-        { opacity: 1, scale: 1, duration: 1.5, ease: "power2.out" }
+        { opacity: 1, scale: 1, duration: 1.5, ease: "power2.out" },
       );
       gsap.fromTo(
         menuItemsRefs.value,
@@ -271,11 +282,11 @@ watch(
           ease: "bounce.out",
           stagger: 0.12,
           delay: 1,
-        }
+        },
       );
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 watch(
@@ -293,7 +304,6 @@ watch(
           ease: "power1.out",
         });
       }
-      initScrambleTextEffect();
     } else {
       if (aboutContainer.value) {
         gsap.to(aboutContainer.value, {
@@ -303,7 +313,28 @@ watch(
         });
       }
     }
-  }
+  },
+);
+
+// Watch for music mute changes
+watch(
+  () => uiStore.isMusicMuted,
+  (isMuted) => {
+    if (backgroundMusic.value) {
+      const volume = isMuted ? 0 : uiStore.musicVolume / 100;
+      backgroundMusic.value.volume = volume;
+    }
+  },
+);
+
+// Watch for music volume changes
+watch(
+  () => uiStore.musicVolume,
+  (volume) => {
+    if (backgroundMusic.value && !uiStore.isMusicMuted) {
+      backgroundMusic.value.volume = volume / 100;
+    }
+  },
 );
 </script>
 
@@ -384,7 +415,10 @@ watch(
   align-items: center;
   justify-content: center;
   width: 100%;
-  transition: background 0.2s, color 0.2s, font-weight 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    font-weight 0.2s;
   position: relative;
   font-weight: 400;
   letter-spacing: 0.04em;

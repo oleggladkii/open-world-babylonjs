@@ -100,14 +100,10 @@ const createStreetLamps = async () => {
                 streetLampInstances.length - lampMeshes.length
               ];
             if (referenceMesh) {
-            //   createLampLight(referenceMesh, i);
+              // createLampLight(referenceMesh, i);
             }
           }
         }
-
-        console.log(
-          `Created ${streetLampInstances.length} street lamp mesh instances`,
-        );
       }
     }
   } catch (error) {

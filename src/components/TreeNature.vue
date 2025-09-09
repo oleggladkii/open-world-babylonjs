@@ -26,7 +26,6 @@ const { loadModel } = useLoadModel();
 // Tree positions around the village scene
 const treePositions = [
   new Vector3(-28, -26, 0),
-  new Vector3(18, 8, 0),
   new Vector3(2, 25, 0),
   new Vector3(20, 23, 0),
 ];
@@ -34,7 +33,6 @@ const treePositions = [
 // Random rotations for natural appearance
 const treeRotations = [
   new Vector3(0, 0, Angle.FromDegrees(45).radians()),
-  new Vector3(0, 0, Angle.FromDegrees(199).radians()),
   new Vector3(0, 0, Angle.FromDegrees(180).radians()),
   new Vector3(0, 0, Angle.FromDegrees(315).radians()),
 ];
@@ -42,12 +40,14 @@ const treeRotations = [
 // Slight scale variations for natural look
 const treeScales = [
   new Vector3(1.2, 1.2, 1.2),
-  new Vector3(1.1, 1.1, 1.1),
   new Vector3(0.9, 0.9, 0.9),
   new Vector3(1.3, 1.3, 1.3),
 ];
 
 let treeInstances: InstancedMesh[] = [];
+const treeInstancesByPosition: InstancedMesh[][] = []; // Group instances by tree position
+let windAnimationId: number | null = null;
+let windTime = 0;
 
 const createTrees = async () => {
   if (!props.scene) return;
@@ -75,6 +75,8 @@ const createTrees = async () => {
 
         // Create instances for each position
         treePositions.forEach((position, index) => {
+          const treeGroup: InstancedMesh[] = []; // Group for this tree position
+
           treeMeshes.forEach((mesh) => {
             if (mesh instanceof Mesh) {
               const instance = mesh.createInstance(
@@ -91,11 +93,14 @@ const createTrees = async () => {
               instance.receiveShadows = true;
 
               treeInstances.push(instance);
+              treeGroup.push(instance); // Add to this tree's group
             }
           });
-        });
 
-        console.log(`Created ${treeInstances.length} tree instances`);
+          treeInstancesByPosition.push(treeGroup); // Store the group
+        });
+        // Start wind animation after trees are created
+        startWindAnimation();
       }
     }
   } catch (error) {
@@ -103,11 +108,47 @@ const createTrees = async () => {
   }
 };
 
+// Wind swaying animation function
+const startWindAnimation = () => {
+  const animateWind = () => {
+    windTime += 0.016; // ~60fps increment
+
+    treeInstancesByPosition.forEach((treeGroup, treeIndex) => {
+      // Different wind patterns for each tree position
+      const windStrength = 0.025 + treeIndex * 0.005; // Slightly different strength per tree
+      const windSpeed = 1.0 + treeIndex * 0.2; // Different speed per tree
+      const windOffset = treeIndex * 0.5; // Phase offset for natural variation
+
+      // Calculate wind sway using sine wave
+      const swayAmount =
+        Math.sin(windTime * windSpeed + windOffset) * windStrength;
+
+      // Apply same rotation to all parts of this tree (leaves and trunk)
+      const originalRotation = treeRotations[treeIndex % treeRotations.length];
+      const newRotationY = originalRotation.y + swayAmount;
+
+      treeGroup.forEach((instance) => {
+        instance.rotation.y = newRotationY;
+      });
+    });
+
+    windAnimationId = requestAnimationFrame(animateWind);
+  };
+
+  animateWind();
+};
+
 onMounted(() => {
   createTrees();
 });
 
 onUnmounted(() => {
+  // Stop wind animation
+  if (windAnimationId) {
+    cancelAnimationFrame(windAnimationId);
+    windAnimationId = null;
+  }
+
   // Clean up instances
   treeInstances.forEach((instance) => {
     instance.dispose();

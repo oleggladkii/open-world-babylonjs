@@ -79,10 +79,6 @@ const createStreetBenches = async () => {
             }
           }
         }
-
-        console.log(
-          `Created ${streetBenchInstances.length} street bench mesh instances`,
-        );
       }
     }
   } catch (error) {

@@ -58,9 +58,6 @@ const createIdleMale = async () => {
           false,
         );
       }
-      console.log(
-        `Loaded idle male character with ${maleResult.meshes.length} meshes`,
-      );
     }
   } catch (error) {
     console.warn("Failed to load idle male character model:", error);

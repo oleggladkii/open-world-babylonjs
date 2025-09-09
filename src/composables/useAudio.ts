@@ -1,525 +1,329 @@
-import {
-  Scene,
-  Engine,
-  Sound,
-  StreamingSound,
-  CreateSoundAsync,
-  CreateStreamingSoundAsync,
-  AudioEngine,
-  Vector3,
-} from "@babylonjs/core";
-import { watch, ref, computed } from "vue";
-
-export type AudioType = "sound" | "streaming";
+import { ref, computed } from "vue";
+import { Sound, Engine, Vector3 } from "@babylonjs/core";
 
 export interface AudioConfig {
-  // Basic audio info
-  name: string;
-  url: string;
-  type?: AudioType;
-
-  // Playback settings
   autoplay?: boolean;
   loop?: boolean;
   volume?: number;
   playbackRate?: number;
-
-  // Spatial audio settings
   spatialSound?: boolean;
-  position?: Vector3;
   maxDistance?: number;
   rolloffFactor?: number;
   refDistance?: number;
   distanceModel?: string;
   panningModel?: string;
-
-  // Advanced settings
   offset?: number;
   length?: number;
-
-  // Callbacks
-  onReady?: (audio: Sound | StreamingSound) => void;
+  onReady?: () => void;
   onEnded?: () => void;
-  onError?: (error: any) => void;
+  onError?: (error: Error) => void;
 }
 
 export interface AudioGroup {
   name: string;
-  sounds: Map<string, Sound | StreamingSound>;
   volume: number;
   muted: boolean;
+  sounds: Set<string>;
 }
 
-export interface LoadedAudio {
-  sound: Sound | StreamingSound;
-  config: AudioConfig;
-  dispose: () => void;
-}
+export function useAudio() {
+  const audioEngine = ref<Engine | null>(null);
+  const sounds = ref<Map<string, Sound>>(new Map());
+  const audioCache = ref<Map<string, ArrayBuffer>>(new Map());
+  const audioGroups = ref<Map<string, AudioGroup>>(new Map());
+  const masterVolume = ref(1);
+  const isInitialized = ref(false);
 
-export const useAudio = () => {
-  const audioEngine = ref<AudioEngine | null>(null);
-  const audioCache = new Map<string, LoadedAudio>();
-  const audioGroups = new Map<string, AudioGroup>();
-  const loadingPromises = new Map<string, Promise<LoadedAudio | null>>();
+  // Initialize audio engine
+  const initAudioEngine = async () => {
+    if (isInitialized.value) return;
 
-  // Global audio settings
-  const masterVolume = ref(1.0);
-  const masterMuted = ref(false);
-
-  const initializeAudioEngine = (engine: Engine): AudioEngine | null => {
     try {
-      audioEngine.value = engine.getAudioEngine();
-      return audioEngine.value;
+      // Audio engine is automatically initialized with Babylon.js
+      isInitialized.value = true;
     } catch (error) {
-      console.warn("Failed to initialize audio engine:", error);
-      return null;
+      console.error("Failed to initialize audio engine:", error);
     }
   };
 
+  // Load audio file
   const loadAudio = async (
-    config: AudioConfig,
-  ): Promise<LoadedAudio | null> => {
+    name: string,
+    url: string,
+    config: AudioConfig = {},
+  ): Promise<Sound | null> => {
     try {
-      const cacheKey = `${config.url}_${config.name}`;
+      await initAudioEngine();
 
-      // Check cache first
-      if (audioCache.has(cacheKey)) {
-        const cachedAudio = audioCache.get(cacheKey);
-        if (cachedAudio) {
-          return cachedAudio;
-        }
+      if (sounds.value.has(name)) {
+        return sounds.value.get(name)!;
       }
 
-      // Check if already loading
-      if (loadingPromises.has(cacheKey)) {
-        return await loadingPromises.get(cacheKey);
-      }
+      const sound = new Sound(
+        name,
+        url,
+        null,
+        () => {
+          config.onReady?.();
+        },
+        {
+          autoplay: config.autoplay || false,
+          loop: config.loop || false,
+          volume: config.volume || 1,
+          playbackRate: config.playbackRate || 1,
+          spatialSound: config.spatialSound || false,
+          maxDistance: config.maxDistance || 100,
+          rolloffFactor: config.rolloffFactor || 1,
+          refDistance: config.refDistance || 1,
+          distanceModel: config.distanceModel || "linear",
+          offset: config.offset,
+          length: config.length,
+        },
+      );
 
-      // Start loading
-      const loadingPromise = performAudioLoad(config, cacheKey);
-      loadingPromises.set(cacheKey, loadingPromise);
-
-      const loadedAudio = await loadingPromise;
-      loadingPromises.delete(cacheKey);
-
-      if (loadedAudio) {
-        audioCache.set(cacheKey, loadedAudio);
-      }
-
-      return loadedAudio;
-    } catch (error) {
-      console.error("Audio loading failed:", error);
       if (config.onError) {
-        config.onError(error);
-      }
-      return null;
-    }
-  };
-
-  const performAudioLoad = async (
-    config: AudioConfig,
-    cacheKey: string,
-  ): Promise<LoadedAudio | null> => {
-    if (!audioEngine.value) {
-      throw new Error("Audio engine not initialized");
-    }
-
-    let sound: Sound | StreamingSound;
-
-    try {
-      if (config.type === "streaming") {
-        sound = await CreateStreamingSoundAsync(
-          config.name,
-          config.url,
-          {
-            loop: config.loop || false,
-            autoplay: config.autoplay || false,
-            volume: config.volume || 1.0,
-            playbackRate: config.playbackRate || 1.0,
-            spatialSound: config.spatialSound || false,
-            maxDistance: config.maxDistance || 100,
-            rolloffFactor: config.rolloffFactor || 1,
-            refDistance: config.refDistance || 1,
-            distanceModel: config.distanceModel || "linear",
-            panningModel: config.panningModel || "HRTF",
-            offset: config.offset,
-            length: config.length,
-          },
-          audioEngine.value,
-        );
-      } else {
-        sound = await CreateSoundAsync(
-          config.name,
-          config.url,
-          {
-            loop: config.loop || false,
-            autoplay: config.autoplay || false,
-            volume: config.volume || 1.0,
-            playbackRate: config.playbackRate || 1.0,
-            spatialSound: config.spatialSound || false,
-            maxDistance: config.maxDistance || 100,
-            rolloffFactor: config.rolloffFactor || 1,
-            refDistance: config.refDistance || 1,
-            distanceModel: config.distanceModel || "linear",
-            panningModel: config.panningModel || "HRTF",
-            offset: config.offset,
-            length: config.length,
-          },
-          audioEngine.value,
-        );
-      }
-
-      // Setup spatial audio position
-      if (config.spatialSound && config.position) {
-        sound.setPosition(config.position);
-      }
-
-      // Setup callbacks
-      if (config.onReady) {
-        sound.onReady = () => config.onReady!(sound);
+        // Handle error through sound events
+        sound.onended = () => {
+          if (!sound.isReady()) {
+            config.onError?.(new Error(`Failed to load sound: ${name}`));
+          }
+        };
       }
 
       if (config.onEnded) {
-        sound.onEnded = config.onEnded;
+        sound.onended = config.onEnded;
       }
 
-      const loadedAudio: LoadedAudio = {
-        sound,
-        config,
-        dispose: () => {
-          sound.dispose();
-        },
-      };
-
-      return loadedAudio;
+      sounds.value.set(name, sound);
+      return sound;
     } catch (error) {
-      console.error(`Failed to load audio: ${config.name}`, error);
-      throw error;
+      console.error(`Failed to load audio: ${name}`, error);
+      config.onError?.(error);
+      return null;
     }
   };
 
-  const playAudio = (
-    nameOrAudio: string | LoadedAudio,
-    options?: {
-      volume?: number;
-      loop?: boolean;
-      offset?: number;
-    },
-  ): boolean => {
-    try {
-      let audio: LoadedAudio | undefined;
+  // Load multiple audio files
+  const loadMultipleAudio = async (
+    audioList: Array<{ name: string; url: string; config?: AudioConfig }>,
+  ): Promise<Map<string, Sound | null>> => {
+    const results = new Map<string, Sound | null>();
 
-      if (typeof nameOrAudio === "string") {
-        audio = getAudioByName(nameOrAudio);
+    await Promise.all(
+      audioList.map(async ({ name, url, config }) => {
+        const sound = await loadAudio(name, url, config);
+        results.set(name, sound);
+      }),
+    );
+
+    return results;
+  };
+
+  // Play audio
+  const playAudio = (name: string, delay: number = 0): boolean => {
+    const sound = sounds.value.get(name);
+    if (sound && sound.isReady()) {
+      if (delay > 0) {
+        setTimeout(() => sound.play(), delay * 1000);
       } else {
-        audio = nameOrAudio;
+        sound.play();
       }
-
-      if (!audio) {
-        console.warn(`Audio not found: ${nameOrAudio}`);
-        return false;
-      }
-
-      if (options?.volume !== undefined) {
-        audio.sound.volume = options.volume;
-      }
-
-      if (options?.loop !== undefined) {
-        audio.sound.loop = options.loop;
-      }
-
-      if (options?.offset !== undefined && "setPlaybackRate" in audio.sound) {
-        // For regular sounds, we can set offset
-        audio.sound.play(0, options.offset);
-      } else {
-        audio.sound.play();
-      }
-
       return true;
-    } catch (error) {
-      console.error("Failed to play audio:", error);
-      return false;
     }
+    return false;
   };
 
-  const stopAudio = (nameOrAudio: string | LoadedAudio): boolean => {
-    try {
-      let audio: LoadedAudio | undefined;
-
-      if (typeof nameOrAudio === "string") {
-        audio = getAudioByName(nameOrAudio);
-      } else {
-        audio = nameOrAudio;
-      }
-
-      if (!audio) {
-        console.warn(`Audio not found: ${nameOrAudio}`);
-        return false;
-      }
-
-      audio.sound.stop();
+  // Stop audio
+  const stopAudio = (name: string): boolean => {
+    const sound = sounds.value.get(name);
+    if (sound) {
+      sound.stop();
       return true;
-    } catch (error) {
-      console.error("Failed to stop audio:", error);
-      return false;
     }
+    return false;
   };
 
-  const pauseAudio = (nameOrAudio: string | LoadedAudio): boolean => {
-    try {
-      let audio: LoadedAudio | undefined;
-
-      if (typeof nameOrAudio === "string") {
-        audio = getAudioByName(nameOrAudio);
-      } else {
-        audio = nameOrAudio;
-      }
-
-      if (!audio) {
-        console.warn(`Audio not found: ${nameOrAudio}`);
-        return false;
-      }
-
-      audio.sound.pause();
+  // Pause audio
+  const pauseAudio = (name: string): boolean => {
+    const sound = sounds.value.get(name);
+    if (sound) {
+      sound.pause();
       return true;
-    } catch (error) {
-      console.error("Failed to pause audio:", error);
-      return false;
     }
+    return false;
   };
 
-  const setAudioVolume = (
-    nameOrAudio: string | LoadedAudio,
-    volume: number,
-  ): boolean => {
-    try {
-      let audio: LoadedAudio | undefined;
-
-      if (typeof nameOrAudio === "string") {
-        audio = getAudioByName(nameOrAudio);
-      } else {
-        audio = nameOrAudio;
-      }
-
-      if (!audio) {
-        console.warn(`Audio not found: ${nameOrAudio}`);
-        return false;
-      }
-
-      audio.sound.volume = Math.max(0, Math.min(1, volume));
+  // Set volume for specific audio
+  const setAudioVolume = (name: string, volume: number): boolean => {
+    const sound = sounds.value.get(name);
+    if (sound) {
+      sound.setVolume(Math.max(0, Math.min(1, volume)));
       return true;
-    } catch (error) {
-      console.error("Failed to set audio volume:", error);
-      return false;
     }
+    return false;
   };
 
-  const setAudioPosition = (
-    nameOrAudio: string | LoadedAudio,
-    position: Vector3,
-  ): boolean => {
-    try {
-      let audio: LoadedAudio | undefined;
-
-      if (typeof nameOrAudio === "string") {
-        audio = getAudioByName(nameOrAudio);
-      } else {
-        audio = nameOrAudio;
-      }
-
-      if (!audio) {
-        console.warn(`Audio not found: ${nameOrAudio}`);
-        return false;
-      }
-
-      if (audio.config.spatialSound) {
-        audio.sound.setPosition(position);
-        return true;
-      } else {
-        console.warn(`Audio ${audio.config.name} is not spatial`);
-        return false;
-      }
-    } catch (error) {
-      console.error("Failed to set audio position:", error);
-      return false;
-    }
+  // Set master volume
+  const setMasterVolume = (volume: number) => {
+    masterVolume.value = Math.max(0, Math.min(1, volume));
+    // Apply master volume to all sounds
+    sounds.value.forEach((sound) => {
+      const currentVolume = sound.getVolume();
+      sound.setVolume(currentVolume * masterVolume.value);
+    });
   };
 
+  // Update audio position (for spatial audio)
+  const updateAudioPosition = (name: string, position: Vector3): boolean => {
+    const sound = sounds.value.get(name);
+    if (sound && sound.spatialSound) {
+      sound.setPosition(position);
+      return true;
+    }
+    return false;
+  };
+
+  // Check if audio is playing
+  const isAudioPlaying = (name: string): boolean => {
+    const sound = sounds.value.get(name);
+    return sound ? sound.isPlaying : false;
+  };
+
+  // Audio groups management
   const createAudioGroup = (
     groupName: string,
-    initialVolume: number = 1.0,
-  ): AudioGroup => {
-    const group: AudioGroup = {
+    volume: number = 1,
+    muted: boolean = false,
+  ) => {
+    audioGroups.value.set(groupName, {
       name: groupName,
-      sounds: new Map(),
-      volume: initialVolume,
-      muted: false,
-    };
-
-    audioGroups.set(groupName, group);
-    return group;
+      volume,
+      muted,
+      sounds: new Set(),
+    });
   };
 
-  const addToAudioGroup = (groupName: string, audioName: string): boolean => {
-    const group = audioGroups.get(groupName);
-    const audio = getAudioByName(audioName);
-
-    if (!group || !audio) {
-      console.warn(`Group or audio not found: ${groupName}, ${audioName}`);
-      return false;
+  const addToGroup = (soundName: string, groupName: string): boolean => {
+    const group = audioGroups.value.get(groupName);
+    if (group && sounds.value.has(soundName)) {
+      group.sounds.add(soundName);
+      return true;
     }
+    return false;
+  };
 
-    group.sounds.set(audioName, audio.sound);
-    return true;
+  const removeFromGroup = (soundName: string, groupName: string): boolean => {
+    const group = audioGroups.value.get(groupName);
+    if (group) {
+      group.sounds.delete(soundName);
+      return true;
+    }
+    return false;
   };
 
   const setGroupVolume = (groupName: string, volume: number): boolean => {
-    const group = audioGroups.get(groupName);
-    if (!group) {
-      console.warn(`Audio group not found: ${groupName}`);
-      return false;
+    const group = audioGroups.value.get(groupName);
+    if (group) {
+      group.volume = Math.max(0, Math.min(1, volume));
+      group.sounds.forEach((soundName) => {
+        const sound = sounds.value.get(soundName);
+        if (sound && !group.muted) {
+          sound.setVolume(group.volume);
+        }
+      });
+      return true;
     }
+    return false;
+  };
 
-    group.volume = Math.max(0, Math.min(1, volume));
+  const setGroupMuted = (groupName: string, muted: boolean): boolean => {
+    const group = audioGroups.value.get(groupName);
+    if (group) {
+      group.muted = muted;
+      group.sounds.forEach((soundName) => {
+        const sound = sounds.value.get(soundName);
+        if (sound) {
+          sound.setVolume(muted ? 0 : group.volume);
+        }
+      });
+      return true;
+    }
+    return false;
+  };
 
-    // Apply volume to all sounds in group
-    group.sounds.forEach((sound) => {
-      if (!group.muted) {
-        sound.volume = group.volume;
-      }
+  // Cache management
+  const clearCache = () => {
+    audioCache.value.clear();
+  };
+
+  const removeCachedAudio = (name: string): boolean => {
+    return audioCache.value.delete(name);
+  };
+
+  const getCacheInfo = () => {
+    return {
+      size: audioCache.value.size,
+      keys: Array.from(audioCache.value.keys()),
+    };
+  };
+
+  // Cleanup
+  const dispose = () => {
+    sounds.value.forEach((sound) => {
+      sound.dispose();
     });
-
-    return true;
+    sounds.value.clear();
+    audioCache.value.clear();
+    audioGroups.value.clear();
+    isInitialized.value = false;
   };
 
-  const muteAudioGroup = (
-    groupName: string,
-    muted: boolean = true,
-  ): boolean => {
-    const group = audioGroups.get(groupName);
-    if (!group) {
-      console.warn(`Audio group not found: ${groupName}`);
-      return false;
-    }
-
-    group.muted = muted;
-
-    // Apply mute to all sounds in group
-    group.sounds.forEach((sound) => {
-      sound.volume = muted ? 0 : group.volume;
-    });
-
-    return true;
-  };
-
-  const loadMultipleAudio = async (
-    configs: AudioConfig[],
-  ): Promise<(LoadedAudio | null)[]> => {
-    const promises = configs.map((config) => loadAudio(config));
-    return Promise.all(promises);
-  };
-
-  const getAudioByName = (name: string): LoadedAudio | undefined => {
-    for (const [key, audio] of audioCache.entries()) {
-      if (audio.config.name === name) {
-        return audio;
-      }
-    }
-    return undefined;
-  };
-
-  const getLoadedAudio = (cacheKey: string): LoadedAudio | null => {
-    return audioCache.get(cacheKey) || null;
-  };
-
-  const isAudioPlaying = (nameOrAudio: string | LoadedAudio): boolean => {
-    let audio: LoadedAudio | undefined;
-
-    if (typeof nameOrAudio === "string") {
-      audio = getAudioByName(nameOrAudio);
-    } else {
-      audio = nameOrAudio;
-    }
-
-    if (!audio) {
-      return false;
-    }
-
-    return audio.sound.isPlaying;
-  };
-
-  const clearAudioCache = () => {
-    audioCache.forEach((audio) => audio.dispose());
-    audioCache.clear();
-    loadingPromises.clear();
-  };
-
-  const removeFromCache = (cacheKey: string) => {
-    const audio = audioCache.get(cacheKey);
-    if (audio) {
-      audio.dispose();
-      audioCache.delete(cacheKey);
-    }
-  };
-
-  const getCacheSize = (): number => {
-    return audioCache.size;
-  };
-
-  const getCacheKeys = (): string[] => {
-    return Array.from(audioCache.keys());
-  };
-
-  const getAudioGroups = (): string[] => {
-    return Array.from(audioGroups.keys());
-  };
-
-  const disposeAudio = () => {
-    clearAudioCache();
-    audioGroups.clear();
-    audioEngine.value = null;
-  };
+  // Computed properties
+  const loadedSounds = computed(() => Array.from(sounds.value.keys()));
+  const playingSounds = computed(() =>
+    Array.from(sounds.value.entries())
+      .filter(([_, sound]) => sound.isPlaying)
+      .map(([name, _]) => name),
+  );
 
   return {
-    // Initialization
-    initializeAudioEngine,
+    // State
+    isInitialized,
+    masterVolume,
+    loadedSounds,
+    playingSounds,
 
-    // Audio loading
+    // Core methods
+    initAudioEngine,
     loadAudio,
     loadMultipleAudio,
-
-    // Playback control
     playAudio,
     stopAudio,
     pauseAudio,
 
     // Volume control
     setAudioVolume,
-    masterVolume,
-    masterMuted,
+    setMasterVolume,
 
     // Spatial audio
-    setAudioPosition,
+    updateAudioPosition,
 
-    // Audio groups
-    createAudioGroup,
-    addToAudioGroup,
-    setGroupVolume,
-    muteAudioGroup,
-    getAudioGroups,
-
-    // Utility
-    getAudioByName,
-    getLoadedAudio,
+    // Status
     isAudioPlaying,
 
+    // Groups
+    createAudioGroup,
+    addToGroup,
+    removeFromGroup,
+    setGroupVolume,
+    setGroupMuted,
+
     // Cache management
-    clearAudioCache,
-    removeFromCache,
-    getCacheSize,
-    getCacheKeys,
+    clearCache,
+    removeCachedAudio,
+    getCacheInfo,
 
     // Cleanup
-    disposeAudio,
+    dispose,
   };
-};
+}
