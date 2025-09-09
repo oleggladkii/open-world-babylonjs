@@ -38,7 +38,7 @@ const createStreetBenches = async () => {
   try {
     const benchResult = await loadModel(props.scene, {
       fileName: "donate_bench.glb",
-      rootUrl: "public/assets/models/environments/",
+      rootUrl: "/assets/models/environments/",
       position: new Vector3(0, 0, 0),
       scaling: new Vector3(0.5, 0.5, 0.5),
       name: "streetBench",

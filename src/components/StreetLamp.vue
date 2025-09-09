@@ -51,7 +51,7 @@ const createStreetLamps = async () => {
   try {
     const lampResult = await loadModel(props.scene, {
       fileName: "street-lamp.glb",
-      rootUrl: "public/assets/models/environments/",
+      rootUrl: "/assets/models/environments/",
       position: new Vector3(0, 0, 0),
       scaling: new Vector3(1, 1, 1),
       name: "streetLamp",

@@ -56,6 +56,7 @@ import StreetBench from "@/components/StreetBench.vue";
 import HouseOne from "@/components/HouseOne.vue";
 import IdleMale from "@/components/IdleMale.vue";
 import "@babylonjs/inspector";
+import grassTextureUrl from "../assets/textures/grass.jpg";
 
 const canvasRef = ref<HTMLCanvasElement>();
 
@@ -155,7 +156,9 @@ const createRTSScene = async () => {
   );
 
   const groundMaterial = new StandardMaterial("groundMaterial", scene);
-  const grassTexture = new Texture("/src/assets/textures/grass.jpg", scene);
+
+
+  const grassTexture = new Texture(grassTextureUrl, scene);
   grassTexture.uScale = 10; // Repeat texture 10 times horizontally
   grassTexture.vScale = 10; // Repeat texture 10 times vertically
   groundMaterial.diffuseTexture = grassTexture;

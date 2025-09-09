@@ -7,6 +7,8 @@ import {
   Mesh,
   Texture,
 } from "@babylonjs/core";
+import asphaltTextureUrl from "../assets/textures/asphalt-color.jpg";
+import pavingStonesTextureUrl from "../assets/textures/pavingStones-color.jpg";
 
 export interface RoadConfig {
   // Basic road settings
@@ -44,10 +46,7 @@ export const useRoads = () => {
       "texturedAsphaltMaterial",
       scene,
     );
-    const asphaltTexture = new Texture(
-      "public/assets/textures/asphalt-color.jpg",
-      scene,
-    );
+    const asphaltTexture = new Texture(asphaltTextureUrl, scene);
     asphaltTexture.uOffset = 0;
     asphaltTexture.vOffset = 0;
     asphaltTexture.uScale = 20;
@@ -79,10 +78,7 @@ export const useRoads = () => {
 
     // Create sidewalk material with paving stones texture
     const sidewalkMaterial = new StandardMaterial("sidewalkMaterial", scene);
-    const pavingTexture = new Texture(
-      "public/assets/textures/pavingStones-color.jpg",
-      scene,
-    );
+    const pavingTexture = new Texture(pavingStonesTextureUrl, scene);
     pavingTexture.uOffset = 0;
     pavingTexture.vOffset = 0;
     pavingTexture.uScale = 12;

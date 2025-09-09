@@ -27,7 +27,7 @@ const createIdleMale = async () => {
   try {
     const maleResult = await loadModel(props.scene, {
       fileName: "idle_2_male.glb",
-      rootUrl: "public/assets/models/animations/",
+      rootUrl: "/assets/models/animations/",
       position: new Vector3(8, 0, -2),
       scaling: new Vector3(2, 2, 2),
       rotation: new Vector3(0, Angle.FromDegrees(180).radians(), 0),
