@@ -29,6 +29,11 @@
     :scene="sceneRef"
     :add-shadow-caster="addShadowCasterRef"
   )
+  tree-nature(
+    v-if="sceneRef && addShadowCasterRef"
+    :scene="sceneRef"
+    :add-shadow-caster="addShadowCasterRef"
+  )
 </template>
 
 <script setup lang="ts">
@@ -55,6 +60,7 @@ import StreetLamp from "@/components/StreetLamp.vue";
 import StreetBench from "@/components/StreetBench.vue";
 import HouseOne from "@/components/HouseOne.vue";
 import IdleMale from "@/components/IdleMale.vue";
+import TreeNature from "@/components/TreeNature.vue";
 import "@babylonjs/inspector";
 import grassTextureUrl from "../assets/textures/grass.jpg";
 
