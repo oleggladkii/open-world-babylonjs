@@ -4,7 +4,7 @@ import { defineStore } from "pinia";
 export const useUiStore = defineStore("ui", () => {
   const musicVolume = ref(20);
   const soundsVolume = ref(20);
-  const isMusicMuted = ref(true);
+  const isMusicMuted = ref(false);
   const isSoundsMuted = ref(false);
   const isUiVisible = ref(true);
   const isLoading = ref(true);
