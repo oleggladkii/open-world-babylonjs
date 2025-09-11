@@ -115,7 +115,7 @@ const startWindAnimation = () => {
 
     treeInstancesByPosition.forEach((treeGroup, treeIndex) => {
       // Different wind patterns for each tree position
-      const windStrength = 0.025 + treeIndex * 0.005; // Slightly different strength per tree
+      const windStrength = 0.025 + treeIndex * 0.01; // Slightly different strength per tree
       const windSpeed = 1.0 + treeIndex * 0.2; // Different speed per tree
       const windOffset = treeIndex * 0.5; // Phase offset for natural variation
 

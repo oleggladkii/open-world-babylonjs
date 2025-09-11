@@ -5,7 +5,7 @@ export const useUiStore = defineStore("ui", () => {
   const musicVolume = ref(20);
   const soundsVolume = ref(20);
   const isMusicMuted = ref(true);
-  const isSoundsMuted = ref(true);
+  const isSoundsMuted = ref(false);
   const isUiVisible = ref(true);
   const isLoading = ref(true);
 
