@@ -304,7 +304,7 @@ onMounted(async () => {
     };
   }
   setTimeout(() => {
-  uiStore.setLoading(false);
+    uiStore.setLoading(false);
   }, 1500);
 });
 
