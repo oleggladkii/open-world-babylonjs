@@ -1,7 +1,7 @@
 <template lang="pug">
 .wrapper
-  //- app-loader(v-if="uiStore.isLoading")
-  //- main-map-ui(v-else)
+  app-loader(v-if="uiStore.isLoading")
+  main-map-ui(v-else)
   canvas(ref="canvasRef")
   walking-female(
     v-if="sceneRef && addShadowCasterRef"
@@ -303,9 +303,9 @@ onMounted(async () => {
       }
     };
   }
-  // setTimeout(() => {
+  setTimeout(() => {
   uiStore.setLoading(false);
-  // }, 1500);
+  }, 1500);
 });
 
 onUnmounted(() => {
