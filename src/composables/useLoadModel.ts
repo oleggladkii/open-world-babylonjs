@@ -156,7 +156,6 @@ export const useLoadModel = () => {
       meshes.forEach((mesh) => {
         if (mesh instanceof Mesh) {
           // This would be handled by the shadow system
-          console.log(`Setting up shadow casting for mesh: ${mesh.name}`);
         }
       });
     }

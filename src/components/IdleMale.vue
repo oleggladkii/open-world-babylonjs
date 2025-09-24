@@ -18,6 +18,7 @@ import {
   AnimationGroup,
 } from "@babylonjs/core";
 import { useLoadModel } from "@/composables/useLoadModel";
+import { useInteractivePointer } from "@/composables/useInteractivePointer";
 
 interface Props {
   scene: Scene | null;
@@ -27,6 +28,12 @@ interface Props {
 const props = defineProps<Props>();
 
 const { loadModel } = useLoadModel();
+const {
+  createPointer,
+  showPointer,
+  hidePointer,
+  dispose: disposePointer,
+} = useInteractivePointer();
 
 let maleMeshes: AbstractMesh[] = [];
 const greetingMeshes: AbstractMesh[] = [];
@@ -47,7 +54,6 @@ const switchToGreeting = () => {
   maleMeshes.forEach((mesh) => mesh.setEnabled(false));
 
   // Show greeting meshes and play greeting animation
-  console.log("greetingAnimation", greetingAnimation);
   greetingMeshes.forEach((mesh) => mesh.setEnabled(true));
   greetingAnimation.start(
     false,
@@ -60,7 +66,6 @@ const switchToGreeting = () => {
   // Listen for animation end to switch back to idle
   const onAnimationEnd = greetingAnimation.onAnimationGroupEndObservable.add(
     () => {
-      console.log("Animation ended");
       // Hide greeting meshes and show idle meshes
       greetingMeshes.forEach((mesh) => mesh.setEnabled(false));
       maleMeshes.forEach((mesh) => mesh.setEnabled(true));
@@ -79,14 +84,15 @@ const switchToGreeting = () => {
       isPlayingGreeting = false;
 
       // Remove the observer
-      greetingAnimation.onAnimationGroupEndObservable.remove(onAnimationEnd);
+      if (greetingAnimation) {
+        greetingAnimation.onAnimationGroupEndObservable.remove(onAnimationEnd);
+      }
     },
   );
 
   // Fallback: use timeout based on animation duration
   const animationDuration =
     ((greetingAnimation.to - greetingAnimation.from) / 30) * 1000; // Convert frames to ms (assuming 30fps)
-  console.log("Animation duration fallback:", animationDuration + "ms");
 };
 
 const setupPointerInteraction = () => {
@@ -107,22 +113,22 @@ const setupPointerInteraction = () => {
     switch (pointerInfo.type) {
       case PointerEventTypes.POINTERMOVE:
         if (isCharacterMesh) {
-          console.log("hover male");
           const canvas = props.scene?.getEngine().getRenderingCanvas();
           if (canvas) {
             canvas.style.cursor = "pointer";
           }
+          showPointer();
         } else {
           const canvas = props.scene?.getEngine().getRenderingCanvas();
           if (canvas) {
             canvas.style.cursor = "default";
           }
+          // hidePointer();
         }
         break;
 
       case PointerEventTypes.POINTERDOWN:
         if (isCharacterMesh) {
-          console.log("click male");
           switchToGreeting();
         }
         break;
@@ -201,14 +207,16 @@ const createIdleMale = async () => {
         greetingAnimation = greetingResult.animationGroups[0];
         // Ensure animation is configured to not loop
         greetingAnimation.loopAnimation = false;
-        console.log("Greeting animation setup:", {
-          name: greetingAnimation.name,
-          from: greetingAnimation.from,
-          to: greetingAnimation.to,
-          loopAnimation: greetingAnimation.loopAnimation,
-        });
       }
     }
+
+    // Create rotating pointer above the character
+    createPointer(props.scene, {
+      position: new Vector3(8, 0, -2), // Same position as the character
+      height: 5, // 5 units above the character
+      size: 2, // Smaller size for better UX
+      rotationSpeed: 1, // Normal rotation speed
+    });
 
     // Setup pointer interaction after all models are loaded
     setupPointerInteraction();
@@ -238,6 +246,9 @@ const cleanup = () => {
   if (greetingAnimation) {
     greetingAnimation.stop();
   }
+
+  // Dispose rotating pointer
+  disposePointer();
 
   // Clear arrays and maps
   maleMeshes = [];

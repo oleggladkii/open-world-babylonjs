@@ -1,7 +1,7 @@
 <template lang="pug">
 .wrapper
-  app-loader(v-if="uiStore.isLoading")
-  main-map-ui(v-else)
+  //- app-loader(v-if="uiStore.isLoading")
+  //- main-map-ui(v-else)
   canvas(ref="canvasRef")
   walking-female(
     v-if="sceneRef && addShadowCasterRef"
@@ -55,9 +55,9 @@ import {
   Texture,
   Mesh,
   AbstractMesh,
+  Angle,
 } from "@babylonjs/core";
 import { useScene } from "@/composables/useScene";
-import { useCamera } from "@/composables/useCamera";
 import { createPostProcessing } from "@/composables/usePostProcessing";
 import { useRoads } from "@/composables/useRoads";
 import WalkingFemale from "@/components/WalkingFemale.vue";
@@ -82,31 +82,12 @@ const sceneRef = ref<Scene | null>(null);
 const addShadowCasterRef = ref<((mesh: AbstractMesh) => void) | null>(null);
 const isNight = ref(true); // Default to night mode to show street lamp lights
 
-// RTS-style camera configuration
-const cameraConfig = {
-  type: "arcRotate" as const,
-  position: new Vector3(0, 30, -30),
-  target: new Vector3(0, 0, 0),
-  radius: 60,
-  alpha: 0,
-  beta: Math.PI / 3, // 60 degrees for RTS view
-  lowerBetaLimit: Math.PI / 6, // Prevent going too low (30 degrees)
-  upperBetaLimit: Math.PI / 2.5, // Prevent going too high (72 degrees)
-  lowerRadiusLimit: 10,
-  upperRadiusLimit: 80,
-  checkCollisions: true,
-  ellipsoid: new Vector3(2, 2, 2),
-};
-
 // Scene configuration includes lighting and shadow settings
 const sceneConfig = {
   clearColor: new Color4(0.4, 0.6, 0.9, 1.0), // Sky blue background
   ambientColor: new Color3(0.3, 0.3, 0.4),
   enableShadows: true,
   enableFog: false,
-  // fogMode: 3,
-  // fogDensity: 0.01,
-  // fogColor: new Color3(0.8, 0.9, 1.0),
   enablePhysics: false,
   enableAnimations: true,
   shadowMapSize: 2048,
@@ -115,8 +96,31 @@ const sceneConfig = {
 };
 
 const { createScene, addShadowCaster, disposeScene } = useScene();
-const { createCamera, disposeCamera } = useCamera();
 const { createRoads } = useRoads();
+
+const createCamera = (
+  scene: Scene,
+  canvas: HTMLCanvasElement,
+): ArcRotateCamera => {
+  const camera = new ArcRotateCamera(
+    "RTSCamera",
+    Angle.FromDegrees(290).radians(),
+    Angle.FromDegrees(60).radians(),
+    50,
+    Vector3.Zero(),
+    scene,
+  );
+  camera.attachControl(canvas, true);
+  camera.lowerRadiusLimit = 10;
+  camera.upperRadiusLimit = 80;
+  camera.panningSensibility = 1000;
+  camera.wheelDeltaPercentage = 0.01;
+  camera.lowerBetaLimit = Angle.FromDegrees(20).radians();
+  camera.upperBetaLimit = Angle.FromDegrees(75).radians();
+  camera.panningAxis = new Vector3(1, 0, 1);
+
+  return camera;
+};
 
 const createRTSScene = async () => {
   if (!canvasRef.value) return;
@@ -138,20 +142,7 @@ const createRTSScene = async () => {
   addShadowCasterRef.value = addShadowCaster;
 
   // Create RTS-style camera
-  const camera = createCamera(scene, canvasRef.value, cameraConfig);
-
-  // Disable right-click panning for RTS controls
-  if (camera && "inputs" in camera) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const arcCamera = camera as any;
-    if (
-      arcCamera.inputs &&
-      arcCamera.inputs.attached &&
-      arcCamera.inputs.attached.pointers
-    ) {
-      arcCamera.inputs.attached.pointers.buttons = [0]; // Only allow left mouse button
-    }
-  }
+  const camera = createCamera(scene, canvasRef.value);
 
   // Add post-processing effects
   if (camera && camera.getClassName() === "ArcRotateCamera") {
@@ -172,7 +163,6 @@ const createRTSScene = async () => {
   );
 
   const groundMaterial = new StandardMaterial("groundMaterial", scene);
-
 
   const grassTexture = new Texture(grassTextureUrl, scene);
   grassTexture.uScale = 10; // Repeat texture 10 times horizontally
@@ -308,15 +298,14 @@ onMounted(async () => {
     cleanup = () => {
       window.removeEventListener("resize", result.handleResize);
       disposeScene();
-      disposeCamera();
       if (result.engine) {
         result.engine.dispose();
       }
     };
   }
-  setTimeout(() => {
-    uiStore.setLoading(false);
-  }, 1500);
+  // setTimeout(() => {
+  uiStore.setLoading(false);
+  // }, 1500);
 });
 
 onUnmounted(() => {
