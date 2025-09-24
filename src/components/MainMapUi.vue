@@ -51,7 +51,7 @@
         span.chevron ❯
   .volume-controls
     .volume-control
-      label.volume-label Music
+      label.volume-label Volume
       button.icon-button(@click="uiStore.toggleMusicMute")
         i.material-icons {{ uiStore.isMusicMuted ? "volume_off" : "volume_up" }}
       input.volume-slider(
@@ -60,17 +60,6 @@
         min="0",
         max="100",
         @input="handleMusicVolumeChange"
-      )
-    .volume-control
-      label.volume-label Sounds
-      button.icon-button(@click="uiStore.toggleSoundsMute")
-        i.material-icons {{ uiStore.isSoundsMuted ? "volume_off" : "volume_up" }}
-      input.volume-slider(
-        v-model="uiStore.soundsVolume",
-        type="range",
-        min="0",
-        max="100",
-        @input="handleSoundsVolumeChange"
       )
 </template>
 
@@ -100,11 +89,6 @@ const handleMusicVolumeChange = useDebounceFn((event: Event) => {
   }
 }, 100);
 
-const handleSoundsVolumeChange = useDebounceFn((event: Event) => {
-  const target = event.target as HTMLInputElement;
-  uiStore.setSoundsVolume(Number(target.value));
-}, 100);
-
 const handleStart = () => {
   startBackgroundMusic();
   uiStore.hideUi();
@@ -132,7 +116,11 @@ const initBackgroundMusic = async () => {
     backgroundMusic.value.loop = true;
     backgroundMusic.value.volume = uiStore.isMusicMuted
       ? 0
-      : uiStore.musicVolume / 100;
+      : (uiStore.musicVolume / 100) * 0.2; // Background music is 80% quieter
+    console.log(
+      "(uiStore.musicVolume / 100) * 0.8",
+      (uiStore.musicVolume / 100) * 0.8,
+    );
 
     backgroundMusic.value.addEventListener("canplaythrough", () => {
       console.log("Background music loaded and ready");
@@ -321,7 +309,7 @@ watch(
   () => uiStore.isMusicMuted,
   (isMuted) => {
     if (backgroundMusic.value) {
-      const volume = isMuted ? 0 : uiStore.musicVolume / 100;
+      const volume = isMuted ? 0 : (uiStore.musicVolume / 100) * 0.2; // Background music is 80% quieter
       backgroundMusic.value.volume = volume;
     }
   },
@@ -332,7 +320,7 @@ watch(
   () => uiStore.musicVolume,
   (volume) => {
     if (backgroundMusic.value && !uiStore.isMusicMuted) {
-      backgroundMusic.value.volume = volume / 100;
+      backgroundMusic.value.volume = (volume / 100) * 0.2; // Background music is 80% quieter
     }
   },
 );

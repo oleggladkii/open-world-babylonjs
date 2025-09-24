@@ -1,11 +1,18 @@
 <template lang="pug">
 div
+  chat-modal(
+    :is-visible="showChatModal" 
+    :camera="props.camera"
+    :scene="props.scene"
+    @close="handleCloseChat"
+  )
   // This component handles the idle male character
   // It's designed to be used within a Babylon.js scene with hover interactions
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
+import ChatModal from "./ChatModal.vue";
 import {
   Scene,
   Vector3,
@@ -16,13 +23,18 @@ import {
   PointerInfo,
   PointerEventTypes,
   AnimationGroup,
+  ArcRotateCamera,
 } from "@babylonjs/core";
 import { useLoadModel } from "@/composables/useLoadModel";
 import { useInteractivePointer } from "@/composables/useInteractivePointer";
+import { useCameraAnimation } from "@/composables/useCameraAnimation";
+import { useAudio } from "@/composables/useAudio";
 
 interface Props {
   scene: Scene | null;
   addShadowCaster: (mesh: AbstractMesh) => void;
+  camera: ArcRotateCamera | null;
+  onChatClosed?: () => void;
 }
 
 const props = defineProps<Props>();
@@ -34,21 +46,82 @@ const {
   hidePointer,
   dispose: disposePointer,
 } = useInteractivePointer();
+const { animateCameraToTarget, storeCameraState, getIsAnimating } =
+  useCameraAnimation();
+const { loadAudio, playAudio } = useAudio();
 
 let maleMeshes: AbstractMesh[] = [];
 const greetingMeshes: AbstractMesh[] = [];
 const currentMeshes: AbstractMesh[] = [];
 const originalMaterials: Map<AbstractMesh, Material> = new Map();
-let pointerObserver: Observer<PointerInfo> | null = null;
+
+const showChatModal = ref(false);
 let idleAnimation: AnimationGroup | null = null;
 let greetingAnimation: AnimationGroup | null = null;
 let isPlayingGreeting = false;
 
-const switchToGreeting = () => {
-  if (isPlayingGreeting || !idleAnimation || !greetingAnimation) return;
+const handleCloseChat = async () => {
+  showChatModal.value = false;
+
+  if (props.camera && props.scene) {
+    try {
+      // Animate camera to focus on the house
+      await animateCameraToTarget(props.camera, props.scene, {
+        duration: 1500,
+        targetPosition: new Vector3(16, 0, 14), // House position
+        targetRadius: 50,
+        targetAlpha: Angle.FromDegrees(270).radians(), // 270 degrees
+        targetBeta: Math.PI / 3, // 60 degrees
+      });
+
+    } catch (error) {
+      // Handle error silently
+    }
+  }
+
+  // Don't show pointer over character anymore
+  // Instead, notify parent to show house pointer
+  if (props.onChatClosed) {
+    props.onChatClosed();
+  }
+};
+
+const switchToGreeting = async () => {
+  if (
+    isPlayingGreeting ||
+    !idleAnimation ||
+    !greetingAnimation ||
+    !props.camera ||
+    !props.scene ||
+    getIsAnimating()
+  )
+    return;
 
   isPlayingGreeting = true;
 
+
+  // Hide the interactive pointer above the character
+  hidePointer();
+
+  // Store current camera state for later restoration
+  storeCameraState(props.camera);
+
+
+  // Step 1: Animate camera to focus on the character
+  try {
+    await animateCameraToTarget(props.camera, props.scene, {
+      duration: 1000,
+      targetPosition: new Vector3(8, 0, -2), // IdleMale position
+      targetRadius: 12,
+      targetAlpha: Angle.FromDegrees(270).radians(), // Specific angle for character view
+      targetBeta: Math.PI / 3, // 60 degrees
+    });
+  } catch (error) {
+    // Handle error silently
+  }
+
+
+  // Step 2: After camera animation, start character animation
   // Stop idle animation and hide idle meshes
   idleAnimation.stop();
   maleMeshes.forEach((mesh) => mesh.setEnabled(false));
@@ -63,7 +136,15 @@ const switchToGreeting = () => {
     false,
   );
 
-  // Listen for animation end to switch back to idle
+  // Play greeting sound after animation starts with a small delay
+  setTimeout(() => {
+    const success = playAudio("hello-there");
+    if (!success) {
+      setTimeout(() => playAudio("hello-there"), 500);
+    }
+  }, 200);
+
+  // Listen for animation end to switch back to idle and show chat
   const onAnimationEnd = greetingAnimation.onAnimationGroupEndObservable.add(
     () => {
       // Hide greeting meshes and show idle meshes
@@ -80,6 +161,9 @@ const switchToGreeting = () => {
           false,
         );
       }
+
+      // Show chat modal after animation and sound complete
+      showChatModal.value = true;
 
       isPlayingGreeting = false;
 
@@ -210,6 +294,13 @@ const createIdleMale = async () => {
       }
     }
 
+    // Load greeting sound
+    await loadAudio("hello-there", "/assets/sounds/hello-there.mp3", {
+      volume: 1,
+      loop: false,
+      onReady: () => {},
+    });
+
     // Create rotating pointer above the character
     createPointer(props.scene, {
       position: new Vector3(8, 0, -2), // Same position as the character
@@ -221,7 +312,7 @@ const createIdleMale = async () => {
     // Setup pointer interaction after all models are loaded
     setupPointerInteraction();
   } catch (error) {
-    console.warn("Failed to load male character models:", error);
+    // Handle error silently
   }
 };
 

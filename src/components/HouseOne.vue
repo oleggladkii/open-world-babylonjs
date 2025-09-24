@@ -1,13 +1,14 @@
 <template lang="pug">
 div
   // This component handles the residential family house
-  // Loads and positions the house model with shadows
+  // Loads and positions the house model with shadows and interactive pointer
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted } from "vue";
 import { Scene, Vector3, AbstractMesh } from "@babylonjs/core";
 import { useLoadModel } from "@/composables/useLoadModel";
+import { useInteractivePointer } from "@/composables/useInteractivePointer";
 
 interface Props {
   scene: Scene | null;
@@ -17,6 +18,12 @@ interface Props {
 const props = defineProps<Props>();
 
 const { loadModel } = useLoadModel();
+const {
+  createPointer,
+  showPointer,
+  hidePointer,
+  dispose: disposePointer,
+} = useInteractivePointer();
 
 let houseInstance: AbstractMesh[] = [];
 
@@ -39,10 +46,25 @@ const createHouse = async () => {
         props.addShadowCaster(mesh);
         houseInstance.push(mesh);
       });
+
+      // Create interactive pointer above the house (initially hidden)
+      createPointer(props.scene, {
+        position: new Vector3(16, 0, 15), // House position
+        height: 14, // Height above the house
+        size: 5, // Size of the pointer
+        rotationSpeed: 2, // Rotation speed
+      });
+
+      // Explicitly hide the pointer initially - it will be shown after chat interaction
+      hidePointer();
     }
   } catch (error) {
     console.warn("Failed to load red roof house:", error);
   }
+};
+
+const showHousePointer = () => {
+  showPointer();
 };
 
 const cleanup = () => {
@@ -53,7 +75,15 @@ const cleanup = () => {
     }
   });
   houseInstance = [];
+  
+  // Dispose pointer
+  disposePointer();
 };
+
+// Expose function to parent component
+defineExpose({
+  showHousePointer,
+});
 
 onMounted(() => {
   createHouse();

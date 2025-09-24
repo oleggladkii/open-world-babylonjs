@@ -32,7 +32,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       position: new Vector3(
         47.964393615722656,
         5.998289108276367,
-        20.64552307128906
+        20.64552307128906,
       ),
       rotation: new Vector3(0, 0, 0),
       scale: new Vector3(1.3, 1.3, 1),
@@ -54,7 +54,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       position: new Vector3(
         65.80436706542969,
         4.476771259307861,
-        57.716957092285156
+        57.716957092285156,
       ),
       rotation: new Vector3(0, Angle.FromDegrees(180).radians(), 0),
       scale: new Vector3(0.8, 1.1, 0.8),
@@ -85,7 +85,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       position: new Vector3(
         47.210357666015625,
         5.667227268218994,
-        40.78350067138672
+        40.78350067138672,
       ),
       rotation: new Vector3(0, 0, 0),
       scale: new Vector3(1.3, 1.3, 1),
@@ -116,7 +116,7 @@ export const MAIN_MAP_CONFIG: MapConfig = {
       position: new Vector3(
         66.1789321899414,
         3.5620410442352295,
-        22.357759475708008
+        22.357759475708008,
       ),
       rotation: new Vector3(0, Angle.FromDegrees(180).radians(), 0),
       scale: new Vector3(1.4, 1.3, 0.9),

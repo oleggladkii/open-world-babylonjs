@@ -122,7 +122,7 @@ const createLampLight = (lampMesh: AbstractMesh, index: number) => {
 
   // Position light above the actual lamp mesh
   light.position = lampMesh.position.clone();
-//   light.direction = lampMesh.position.clone();
+  //   light.direction = lampMesh.position.clone();
   light.position.z = index > 2 ? -light.position.z + 4 : -light.position.z - 4;
   light.position.y += 7; // Raise light above lamp post
 

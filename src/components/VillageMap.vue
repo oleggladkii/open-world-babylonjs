@@ -21,13 +21,16 @@
   )
   house-one(
     v-if="sceneRef && addShadowCasterRef"
+    ref="houseOneRef"
     :scene="sceneRef"
     :add-shadow-caster="addShadowCasterRef"
   )
   idle-male(
-    v-if="sceneRef && addShadowCasterRef"
+    v-if="sceneRef && addShadowCasterRef && cameraRef"
     :scene="sceneRef"
     :add-shadow-caster="addShadowCasterRef"
+    :camera="cameraRef"
+    :on-chat-closed="handleChatClosed"
   )
   tree-nature(
     v-if="sceneRef && addShadowCasterRef"
@@ -42,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import {
   Engine,
   Scene,
@@ -74,12 +77,15 @@ import AppLoader from "@/components/AppLoader.vue";
 import MainMapUi from "@/components/MainMapUi.vue";
 
 const canvasRef = ref<HTMLCanvasElement>();
+const houseOneRef = ref<InstanceType<typeof HouseOne>>();
 const uiStore = useUiStore();
 
 let engine: Engine | null = null;
 let scene: Scene | null = null;
+let camera: ArcRotateCamera | null = null;
 const sceneRef = ref<Scene | null>(null);
 const addShadowCasterRef = ref<((mesh: AbstractMesh) => void) | null>(null);
+const cameraRef = ref<ArcRotateCamera | null>(null);
 const isNight = ref(true); // Default to night mode to show street lamp lights
 
 // Scene configuration includes lighting and shadow settings
@@ -112,7 +118,7 @@ const createCamera = (
   );
   camera.attachControl(canvas, true);
   camera.lowerRadiusLimit = 10;
-  camera.upperRadiusLimit = 80;
+  camera.upperRadiusLimit = 60;
   camera.panningSensibility = 1000;
   camera.wheelDeltaPercentage = 0.01;
   camera.lowerBetaLimit = Angle.FromDegrees(20).radians();
@@ -142,7 +148,8 @@ const createRTSScene = async () => {
   addShadowCasterRef.value = addShadowCaster;
 
   // Create RTS-style camera
-  const camera = createCamera(scene, canvasRef.value);
+  camera = createCamera(scene, canvasRef.value);
+  cameraRef.value = camera;
 
   // Add post-processing effects
   if (camera && camera.getClassName() === "ArcRotateCamera") {
@@ -289,9 +296,10 @@ const createRTSScene = async () => {
 
 let cleanup: (() => void) | null = null;
 
+const isLocalMode = import.meta.env.MODE === "development";
 onMounted(async () => {
   const result = await createRTSScene();
-  if (import.meta.env.MODE === "development") {
+  if (isLocalMode) {
     scene?.debugLayer.show();
   }
   if (result) {
@@ -303,10 +311,21 @@ onMounted(async () => {
       }
     };
   }
-  setTimeout(() => {
+  if (isLocalMode) {
     uiStore.setLoading(false);
-  }, 1500);
+  } else {
+    setTimeout(() => {
+      uiStore.setLoading(false);
+    }, 1500);
+  }
 });
+
+const handleChatClosed = () => {
+  // Show pointer over house after chat is closed
+  if (houseOneRef.value) {
+    houseOneRef.value.showHousePointer();
+  }
+};
 
 onUnmounted(() => {
   if (cleanup) {

@@ -47,7 +47,7 @@ export const useClouds = () => {
 
     const cloudTexture = new Texture(
       "https://raw.githubusercontent.com/aWeirdo/Babylon.js/master/smoke_15.png",
-      scene
+      scene,
     );
 
     particleSystem.particleTexture = cloudTexture;

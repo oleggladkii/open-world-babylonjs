@@ -54,7 +54,11 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          babylon: ["@babylonjs/core", "@babylonjs/loaders", "@babylonjs/materials"],
+          babylon: [
+            "@babylonjs/core",
+            "@babylonjs/loaders",
+            "@babylonjs/materials",
+          ],
           babylonGui: ["@babylonjs/gui"],
           babylonInspector: ["@babylonjs/inspector"],
           vue: ["vue", "vue-router", "pinia"],

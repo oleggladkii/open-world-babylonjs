@@ -39,7 +39,7 @@ export const useGround = () => {
           maxHeight: config.maxHeight || 10,
           subdivisions: config.subdivisions || 20,
         },
-        scene
+        scene,
       );
     } else {
       ground = MeshBuilder.CreateGround(
@@ -49,7 +49,7 @@ export const useGround = () => {
           height: config.height,
           subdivisions: config.subdivisions || 20,
         },
-        scene
+        scene,
       );
     }
 
@@ -59,7 +59,7 @@ export const useGround = () => {
 
     const groundMat = new StandardMaterial(
       `${config.name || "ground"}Mat`,
-      scene
+      scene,
     );
 
     if (config.textureUrl) {

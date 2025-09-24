@@ -31,7 +31,7 @@ export const useDebug = () => {
   const setupBuildingGizmoPosition = (
     mesh: Mesh,
     config: ObjectConfig,
-    scene: Scene
+    scene: Scene,
   ): void => {
     try {
       const utilLayer = new UtilityLayerRenderer(scene);
@@ -51,7 +51,7 @@ export const useDebug = () => {
   const setupBuildingGizmoScale = (
     mesh: Mesh,
     config: ObjectConfig,
-    scene: Scene
+    scene: Scene,
   ): void => {
     try {
       const utilLayer = new UtilityLayerRenderer(scene);
@@ -71,14 +71,14 @@ export const useDebug = () => {
   const setupBuildingGizmoRotation = (
     mesh: Mesh,
     config: ObjectConfig,
-    scene: Scene
+    scene: Scene,
   ): void => {
     try {
       const utilLayer = new UtilityLayerRenderer(scene);
       const rotationGizmo = new PlaneRotationGizmo(
         new Vector3(0, 1, 0),
         Color3.Red(),
-        utilLayer
+        utilLayer,
       );
       rotationGizmo.updateGizmoRotationToMatchAttachedMesh = false;
       rotationGizmo.attachedMesh = mesh;
@@ -90,7 +90,7 @@ export const useDebug = () => {
   const createGroundGrid = (
     scene: Scene,
     width: number,
-    height: number
+    height: number,
   ): void => {
     try {
       const grid = MeshBuilder.CreateGround(
@@ -100,7 +100,7 @@ export const useDebug = () => {
           height,
           subdivisions: 20,
         },
-        scene
+        scene,
       );
       grid.position.y = 10;
       const gridMaterial = new GridMaterial("gridMaterial", scene);
@@ -121,7 +121,7 @@ export const useDebug = () => {
       const lightMesh = MeshBuilder.CreateSphere(
         `lightGizmo_${light.name}`,
         { diameter: 0.5 },
-        scene
+        scene,
       );
       if (light instanceof HemisphericLight) {
         lightMesh.position = light.direction;
@@ -154,7 +154,7 @@ export const useDebug = () => {
 
       const material = new StandardMaterial(
         `lightGizmoMat_${light.name}`,
-        scene
+        scene,
       );
       if (light instanceof HemisphericLight) {
         material.emissiveColor = new Color3(0.5, 0.5, 1);

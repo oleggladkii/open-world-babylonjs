@@ -9,7 +9,7 @@ export function createPostProcessing(scene: Scene, camera: ArcRotateCamera) {
     "defaultPipeline",
     true,
     scene,
-    [camera]
+    [camera],
   );
   pipeline.imageProcessingEnabled = true;
   pipeline.imageProcessing.contrast = 1.4;

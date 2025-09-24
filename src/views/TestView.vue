@@ -44,7 +44,7 @@ const createScene = (): void => {
     Angle.FromDegrees(60).radians(),
     65,
     new Vector3(0, 17, 0),
-    scene.value
+    scene.value,
   );
   camera.attachControl(canvas, true);
 
@@ -52,14 +52,14 @@ const createScene = (): void => {
   const hemisphericLight = new HemisphericLight(
     "hemisphericLight",
     new Vector3(0, 1, 0),
-    scene.value
+    scene.value,
   );
   hemisphericLight.intensity = 0.7;
 
   const directionalLight = new DirectionalLight(
     "directionalLight",
     new Vector3(-1, -2, -1),
-    scene.value
+    scene.value,
   );
   directionalLight.intensity = 0.5;
 
@@ -76,7 +76,7 @@ const createScene = (): void => {
 
       // Scale the model if needed
       rootMesh.scaling = new Vector3(1, 1, 1);
-    }
+    },
   );
 
   // Start render loop
