@@ -31,13 +31,10 @@ export function useAudio() {
     if (audioEngine) return audioEngine;
 
     try {
-      console.log("Creating audio engine...");
       audioEngine = await CreateAudioEngineAsync();
-      console.log("Audio engine created successfully");
 
       // Wait for audio engine to be unlocked
       await audioEngine.unlockAsync();
-      console.log("Audio engine unlocked and ready");
 
       return audioEngine;
     } catch (error) {
@@ -54,7 +51,6 @@ export function useAudio() {
   ): Promise<StaticSound | null> => {
     const existingSound = sounds.value.get(name);
     if (existingSound) {
-      console.log(`Audio ${name} already loaded`);
       return existingSound;
     }
 
@@ -68,10 +64,6 @@ export function useAudio() {
 
       const finalVolume = (config.volume ?? 1) * (uiStore.musicVolume / 100);
 
-      console.log(`Loading audio: ${name} from ${url}`);
-      console.log(
-        `Volume calculation: ${config.volume ?? 1} * ${uiStore.musicVolume / 100} = ${finalVolume}`,
-      );
 
       const sound = await CreateSoundAsync(name, url, {
         loop: config.loop ?? false,
@@ -80,15 +72,12 @@ export function useAudio() {
         maxInstances: 1,
       });
 
-      console.log(`Audio ${name} loaded successfully`);
-
       if (config.onReady) {
         config.onReady();
       }
 
       sounds.value.set(name, sound);
       soundConfigs.value.set(name, config); // Store config for later volume updates
-      console.log(`Audio ${name} added to sounds map`);
       return sound;
     } catch (error) {
       console.error(`Failed to load audio: ${name}`, error);
@@ -98,20 +87,14 @@ export function useAudio() {
 
   // Play audio
   const playAudio = (name: string, delay: number = 0): boolean => {
-    console.log(`Attempting to play audio: ${name}`);
     const sound = sounds.value.get(name);
 
     if (!sound) {
-      console.error(`Audio ${name} not found in sounds map`);
-      console.log("Available sounds:", Array.from(sounds.value.keys()));
       return false;
     }
 
-    console.log(`Playing audio ${name} with volume: ${sound.volume}`);
-
     if (delay > 0) {
       setTimeout(() => {
-        console.log(`Playing delayed audio: ${name}`);
         sound.play();
       }, delay * 1000);
     } else {
@@ -199,15 +182,11 @@ export function useAudio() {
   watch(
     () => uiStore.musicVolume,
     (newVolume) => {
-      console.log(
-        `Music volume changed to ${newVolume}%, updating all sounds...`,
-      );
       sounds.value.forEach((sound, name) => {
         const config = soundConfigs.value.get(name);
         if (config) {
           const newSoundVolume = (config.volume ?? 1) * (newVolume / 100);
           sound.volume = newSoundVolume;
-          console.log(`Updated ${name} volume to ${newSoundVolume}`);
         }
       });
     },

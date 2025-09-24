@@ -117,14 +117,6 @@ const initBackgroundMusic = async () => {
     backgroundMusic.value.volume = uiStore.isMusicMuted
       ? 0
       : (uiStore.musicVolume / 100) * 0.2; // Background music is 80% quieter
-    console.log(
-      "(uiStore.musicVolume / 100) * 0.8",
-      (uiStore.musicVolume / 100) * 0.8,
-    );
-
-    backgroundMusic.value.addEventListener("canplaythrough", () => {
-      console.log("Background music loaded and ready");
-    });
 
     backgroundMusic.value.addEventListener("error", (error: Event) => {
       console.error("Failed to load background music:", error);

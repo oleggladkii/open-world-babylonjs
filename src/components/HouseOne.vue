@@ -6,13 +6,25 @@ div
 
 <script setup lang="ts">
 import { onMounted, onUnmounted } from "vue";
-import { Scene, Vector3, AbstractMesh } from "@babylonjs/core";
+import {
+  Vector3,
+  Scene,
+  AbstractMesh,
+  ArcRotateCamera,
+  Angle,
+  Observer,
+  PointerInfo,
+  PointerEventTypes,
+} from "@babylonjs/core";
 import { useLoadModel } from "@/composables/useLoadModel";
 import { useInteractivePointer } from "@/composables/useInteractivePointer";
+import { useCameraAnimation } from "@/composables/useCameraAnimation";
 
 interface Props {
   scene: Scene | null;
   addShadowCaster: (mesh: AbstractMesh) => void;
+  camera?: ArcRotateCamera | null;
+  onHouseClick?: () => void;
 }
 
 const props = defineProps<Props>();
@@ -24,8 +36,10 @@ const {
   hidePointer,
   dispose: disposePointer,
 } = useInteractivePointer();
+const { animateCameraToTarget, getIsAnimating } = useCameraAnimation();
 
 let houseInstance: AbstractMesh[] = [];
+let pointerObserver: Observer<PointerInfo> | null = null;
 
 const createHouse = async () => {
   if (!props.scene) return;
@@ -57,6 +71,9 @@ const createHouse = async () => {
 
       // Explicitly hide the pointer initially - it will be shown after chat interaction
       hidePointer();
+
+      // Setup pointer interaction after house is loaded
+      setupPointerInteraction();
     }
   } catch (error) {
     console.warn("Failed to load red roof house:", error);
@@ -67,6 +84,72 @@ const showHousePointer = () => {
   showPointer();
 };
 
+const setupPointerInteraction = () => {
+  if (!props.scene) return;
+
+  pointerObserver = props.scene.onPointerObservable.add((pointerInfo) => {
+    const pickedMesh = pointerInfo.pickInfo?.pickedMesh;
+
+    // Check if picked mesh belongs to the house
+    const isHouseMesh =
+      pickedMesh &&
+      houseInstance.some(
+        (mesh) =>
+          mesh === pickedMesh ||
+          mesh.getChildMeshes().includes(pickedMesh as AbstractMesh),
+      );
+
+    switch (pointerInfo.type) {
+      case PointerEventTypes.POINTERMOVE:
+        if (isHouseMesh) {
+          const canvas = props.scene?.getEngine().getRenderingCanvas();
+          if (canvas) {
+            canvas.style.cursor = "pointer";
+          }
+          showPointer();
+        } else {
+          const canvas = props.scene?.getEngine().getRenderingCanvas();
+          if (canvas) {
+            canvas.style.cursor = "default";
+          }
+        }
+        break;
+
+      case PointerEventTypes.POINTERDOWN:
+        if (isHouseMesh) {
+          handleHouseClick();
+        }
+        break;
+    }
+  });
+};
+
+const handleHouseClick = async () => {
+  if (!props.camera || !props.scene || getIsAnimating()) {
+    return;
+  }
+
+  try {
+    // Hide the pointer
+    hidePointer();
+
+    // Animate camera to house
+    await animateCameraToTarget(props.camera, props.scene, {
+      targetPosition: new Vector3(20, 1, 8), // House center position
+      targetRadius: 1, // Distance from house
+      targetAlpha: Angle.FromDegrees(-90).radians(), // Face the front of the house
+      targetBeta: Angle.FromDegrees(120).radians(), // Slightly above ground level
+    });
+
+    // Call the callback to trigger screen fade
+    if (props.onHouseClick) {
+      props.onHouseClick();
+    }
+  } catch (error) {
+    // Handle error silently
+  }
+};
+
 const cleanup = () => {
   // Dispose all house meshes
   houseInstance.forEach((mesh) => {
@@ -75,7 +158,13 @@ const cleanup = () => {
     }
   });
   houseInstance = [];
-  
+
+  // Dispose pointer observer
+  if (pointerObserver && props.scene) {
+    props.scene.onPointerObservable.remove(pointerObserver);
+    pointerObserver = null;
+  }
+
   // Dispose pointer
   disposePointer();
 };

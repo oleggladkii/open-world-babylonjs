@@ -42,12 +42,9 @@ export const useCameraAnimation = () => {
   ): Promise<void> => {
     return new Promise((resolve) => {
       if (isAnimating) {
-        console.log("Camera is already animating, skipping...");
         resolve();
         return;
       }
-
-      console.log("Starting camera animation with options:", options);
       isAnimating = true;
 
       // Store original state if not already stored
@@ -135,7 +132,6 @@ export const useCameraAnimation = () => {
 
       // Start all animations together
       scene.beginAnimation(camera, 0, totalFrames, false, 1, () => {
-        console.log("Camera animation finished!");
         isAnimating = false;
         resolve();
       });

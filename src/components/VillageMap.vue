@@ -24,6 +24,8 @@
     ref="houseOneRef"
     :scene="sceneRef"
     :add-shadow-caster="addShadowCasterRef"
+    :camera="cameraRef"
+    :on-house-click="handleHouseClick"
   )
   idle-male(
     v-if="sceneRef && addShadowCasterRef && cameraRef"
@@ -325,6 +327,35 @@ const handleChatClosed = () => {
   if (houseOneRef.value) {
     houseOneRef.value.showHousePointer();
   }
+};
+
+const handleHouseClick = () => {
+  // Create screen fade effect
+  const fadeOverlay = document.createElement("div");
+  fadeOverlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: black;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 2s ease-in-out;
+    pointer-events: none;
+  `;
+  
+  document.body.appendChild(fadeOverlay);
+  
+  // Start fade in
+  setTimeout(() => {
+    fadeOverlay.style.opacity = '1';
+  }, 100);
+  
+  // Remove overlay after fade completes
+  setTimeout(() => {
+    document.body.removeChild(fadeOverlay);
+  }, 3000);
 };
 
 onUnmounted(() => {
