@@ -89,7 +89,7 @@ const botResponses = [
   "Your words are like spam emails… instantly deleted.",
   "Nope. Not today. Not tomorrow either.",
   "Did you mistake me for someone who cares?",
-  "Conversation over. Door's that way 👉"
+  "Conversation over. Door's that way 👉",
 ];
 
 const getRandomResponse = () => {

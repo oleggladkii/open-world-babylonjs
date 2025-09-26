@@ -59,6 +59,7 @@ const showChatModal = ref(false);
 let idleAnimation: AnimationGroup | null = null;
 let greetingAnimation: AnimationGroup | null = null;
 let isPlayingGreeting = false;
+let pointerObserver: Observer<PointerInfo> | null = null;
 
 const handleCloseChat = async () => {
   showChatModal.value = false;
@@ -73,7 +74,6 @@ const handleCloseChat = async () => {
         targetAlpha: Angle.FromDegrees(270).radians(), // 270 degrees
         targetBeta: Math.PI / 3, // 60 degrees
       });
-
     } catch (error) {
       // Handle error silently
     }
@@ -99,13 +99,11 @@ const switchToGreeting = async () => {
 
   isPlayingGreeting = true;
 
-
   // Hide the interactive pointer above the character
   hidePointer();
 
   // Store current camera state for later restoration
   storeCameraState(props.camera);
-
 
   // Step 1: Animate camera to focus on the character
   try {
@@ -119,7 +117,6 @@ const switchToGreeting = async () => {
   } catch (error) {
     // Handle error silently
   }
-
 
   // Step 2: After camera animation, start character animation
   // Stop idle animation and hide idle meshes
@@ -173,10 +170,6 @@ const switchToGreeting = async () => {
       }
     },
   );
-
-  // Fallback: use timeout based on animation duration
-  const animationDuration =
-    ((greetingAnimation.to - greetingAnimation.from) / 30) * 1000; // Convert frames to ms (assuming 30fps)
 };
 
 const setupPointerInteraction = () => {

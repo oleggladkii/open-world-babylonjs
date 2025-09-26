@@ -64,7 +64,6 @@ export function useAudio() {
 
       const finalVolume = (config.volume ?? 1) * (uiStore.musicVolume / 100);
 
-
       const sound = await CreateSoundAsync(name, url, {
         loop: config.loop ?? false,
         volume: finalVolume,
