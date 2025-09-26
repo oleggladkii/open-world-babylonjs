@@ -44,9 +44,8 @@
       @interact="handleExit"
     )
     .instructions
-      .instruction Click to look around (FPS mode)
-      .instruction Use WASD to move
-      .instruction FPS: {{ currentFPS }}
+      .instruction Use WASD to move <br> and mouse to look around
+      .instruction(v-if="isLocalMode") FPS: {{ currentFPS }}
   </template>
 
 <script setup lang="ts">
@@ -96,6 +95,9 @@ const currentFPS = ref<number>(0);
 const exitPosition = new Vector3(-5, 1, 9); // Position near the green wall (south wall of first room)
 const windowPosition = new Vector3(-5, 3, -10); // Position in the center of wall1 window opening
 const scene = ref<Scene | null>(null);
+
+// Development mode check
+const isLocalMode = import.meta.env.MODE === "development";
 
 // State
 let engine: Engine | null = null;
@@ -489,16 +491,18 @@ const initHouseInterior = async () => {
     engine.runRenderLoop(() => {
       scene.value!.render();
 
-      // Calculate FPS less frequently for better performance
-      frameCount++;
-      const currentTime = performance.now();
-      if (currentTime - lastTime >= 2000) {
-        // Update every 2 seconds instead of 1
-        currentFPS.value = Math.round(
-          (frameCount * 1000) / (currentTime - lastTime),
-        );
-        frameCount = 0;
-        lastTime = currentTime;
+      // Calculate FPS only in development mode
+      if (isLocalMode) {
+        frameCount++;
+        const currentTime = performance.now();
+        if (currentTime - lastTime >= 2000) {
+          // Update every 2 seconds instead of 1
+          currentFPS.value = Math.round(
+            (frameCount * 1000) / (currentTime - lastTime),
+          );
+          frameCount = 0;
+          lastTime = currentTime;
+        }
       }
     });
 
