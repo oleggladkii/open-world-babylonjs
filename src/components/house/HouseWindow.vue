@@ -230,12 +230,12 @@ const createWindow = (): Mesh[] => {
     );
   });
 
-  // Add to shadow casters if function provided
-  if (props.addShadowCaster) {
-    meshes.forEach((mesh) => {
-      props.addShadowCaster!(mesh);
-    });
-  }
+  // Shadows disabled for performance
+  // if (props.addShadowCaster) {
+  //   meshes.forEach((mesh) => {
+  //     props.addShadowCaster!(mesh);
+  //   });
+  // }
 
   return meshes;
 };

@@ -26,6 +26,14 @@
       :is-active="isActive"
       @use-table="handleUseTable"
     )
+    HouseLamp(
+      v-if="scene"
+      :scene="scene"
+      :add-shadow-caster="addShadowCaster"
+      :player-position="playerPosition"
+      :is-active="isActive"
+      @light-toggled="handleLightToggled"
+    )
     InteractionPrompt(
       text="Press E to exit"
       :trigger-position="exitPosition"
@@ -38,6 +46,7 @@
     .instructions
       .instruction Click to look around (FPS mode)
       .instruction Use WASD to move
+      .instruction FPS: {{ currentFPS }}
   </template>
 
 <script setup lang="ts">
@@ -69,6 +78,7 @@ import HouseCeiling from "./house/HouseCeiling.vue";
 import HouseSofa from "./house/HouseSofa.vue";
 import HouseTable from "./house/HouseTable.vue";
 import HouseWindow from "./house/HouseWindow.vue";
+import HouseLamp from "./house/HouseLamp.vue";
 
 interface Props {
   isActive: boolean;
@@ -82,6 +92,7 @@ const props = withDefaults(defineProps<Props>(), {
 // Refs
 const canvasRef = ref<HTMLCanvasElement>();
 const playerPosition = ref<Vector3 | null>(null);
+const currentFPS = ref<number>(0);
 const exitPosition = new Vector3(-5, 1, 9); // Position near the green wall (south wall of first room)
 const windowPosition = new Vector3(-5, 3, -10); // Position in the center of wall1 window opening
 const scene = ref<Scene | null>(null);
@@ -93,6 +104,10 @@ let camera: FreeCamera | null = null;
 let beforeRenderObserver: any = null;
 let exitCheckInterval: number | null = null;
 let shadowGenerator: any = null;
+
+// FPS tracking
+let lastTime = performance.now();
+let frameCount = 0;
 
 // Shadow caster helper function
 const addShadowCaster = (mesh: any) => {
@@ -106,34 +121,45 @@ const initHouseInterior = async () => {
 
   try {
     // ====== Initialize ======
-    engine = new Engine(canvasRef.value, true);
+    engine = new Engine(canvasRef.value, true, {
+      preserveDrawingBuffer: false,
+      stencil: false,
+      antialias: false, // Disable antialiasing for better performance
+      powerPreference: "high-performance",
+    });
     scene.value = new Scene(engine);
+
+    // Performance optimizations
+    scene.value.skipPointerMovePicking = true; // Skip pointer move picking for better performance
+    scene.value.constantlyUpdateMeshUnderPointer = false; // Disable constant mesh updates
 
     // FPS Camera
     camera = new FreeCamera("camera", new Vector3(0, 1.8, 0), scene.value);
     camera.inputs.clear(); // Disable default inputs
     camera.rotation.y = Angle.FromDegrees(180).radians();
-    // Lighting
+    // Lighting - General ambient light for all rooms
     const ambientLight = new HemisphericLight(
       "ambientLight",
-      new Vector3(0, 1, 0),
+      new Vector3(0, 1, 0), // General upward direction for even lighting
       scene.value,
     );
-    ambientLight.intensity = 0.8; // Reduced ambient light intensity
+    ambientLight.intensity = 0.8; // Increased intensity to light all rooms
 
     // Directional light for shadows - positioned above carpet
-    const lumpLight = new DirectionalLight(
-      "lumpLight",
-      new Vector3(-1, 1, -6), // Light direction: straight down
-      scene.value,
-    );
-    lumpLight.position = new Vector3(-1, 4, -6); // Above carpet at (-5, 0, -4)
-    lumpLight.intensity = 0.1;
+    // const lumpLight = new DirectionalLight(
+    //   "lumpLight",
+    //   new Vector3(-1, 1, -6), // Light direction: straight down
+    //   scene.value,
+    // );
+    // lumpLight.position = new Vector3(-1, 4, -6); // Above carpet at (-5, 0, -4)
+    // lumpLight.intensity = 0.1;
 
-    // Shadow generator
-    shadowGenerator = new CascadedShadowGenerator(2048, lumpLight);
-    shadowGenerator.darkness = 0.3;
-    shadowGenerator.setDarkness(0.3);
+    // Shadow generator with reduced quality for better performance
+    // shadowGenerator = new CascadedShadowGenerator(1024, lumpLight); // Reduced from 2048 to 1024
+    // shadowGenerator.darkness = 0.2; // Reduced darkness
+    // shadowGenerator.setDarkness(0.2);
+    // shadowGenerator.bias = 0.00001; // Reduce shadow acne
+    // shadowGenerator.normalBias = 0.02; // Improve shadow quality
 
     // Physics (Cannon.js) - MOVED BEFORE CHILD COMPONENTS
     const gravity = new Vector3(0, -2, 0); // Reduced gravity
@@ -462,6 +488,18 @@ const initHouseInterior = async () => {
     // ====== Render ======
     engine.runRenderLoop(() => {
       scene.value!.render();
+
+      // Calculate FPS less frequently for better performance
+      frameCount++;
+      const currentTime = performance.now();
+      if (currentTime - lastTime >= 2000) {
+        // Update every 2 seconds instead of 1
+        currentFPS.value = Math.round(
+          (frameCount * 1000) / (currentTime - lastTime),
+        );
+        frameCount = 0;
+        lastTime = currentTime;
+      }
     });
 
     // Handle window resize
@@ -509,6 +547,12 @@ const handleUseTable = (tablePosition: Vector3) => {
   console.log("Player is using the table at position:", tablePosition);
   // You can add table interaction logic here
   // For example: open inventory, show crafting menu, etc.
+};
+
+const handleLightToggled = (isOn: boolean) => {
+  console.log(`House lights are now ${isOn ? "ON" : "OFF"}`);
+  // You can add additional logic here when lights are toggled
+  // For example: update ambient lighting, play sound effects, etc.
 };
 
 // Store event listener references for proper cleanup
@@ -582,9 +626,14 @@ const cleanup = () => {
 
   // Reset state
   playerPosition.value = null;
+  currentFPS.value = 0;
   player = null;
   camera = null;
   shadowGenerator = null;
+
+  // Reset FPS tracking
+  lastTime = performance.now();
+  frameCount = 0;
 
   console.log("HouseInterior cleanup completed");
 };

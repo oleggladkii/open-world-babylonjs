@@ -48,11 +48,11 @@ const createCeiling = () => {
     ceiling1.position.set(-5, 6, 0); // At height 6 (wall height)
 
     ceiling1.material = ceilingMaterial;
-    ceiling1.receiveShadows = false; // Ceiling doesn't receive shadows
-    // Add ceiling as shadow caster
-    if (props.addShadowCaster) {
-      props.addShadowCaster(ceiling1);
-    }
+    // Shadows disabled for performance
+    // ceiling1.receiveShadows = false;
+    // if (props.addShadowCaster) {
+    //   props.addShadowCaster(ceiling1);
+    // }
 
     // ====== ROOM 2 CEILING (10x15) ======
     // Room 2: X: 0 to +10, Z: -5 to +10 (15 units depth)
@@ -64,11 +64,11 @@ const createCeiling = () => {
     ceiling2.position.set(5, 6, 2.5); // At height 6, center at (5, 6, 2.5)
 
     ceiling2.material = ceilingMaterial;
-    ceiling2.receiveShadows = false; // Ceiling doesn't receive shadows
-    // Add ceiling as shadow caster
-    if (props.addShadowCaster) {
-      props.addShadowCaster(ceiling2);
-    }
+    // Shadows disabled for performance
+    // ceiling2.receiveShadows = false;
+    // if (props.addShadowCaster) {
+    //   props.addShadowCaster(ceiling2);
+    // }
 
     console.log("Room 1 ceiling (10x20) created with dark gray material");
     console.log("Room 2 ceiling (10x15) created with dark gray material");

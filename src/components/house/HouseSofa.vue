@@ -117,10 +117,11 @@ const loadSofa = async () => {
       // Enable shadow casting and receiving for all meshes
       result.meshes.forEach((mesh) => {
         if (mesh instanceof Mesh) {
-          mesh.receiveShadows = true;
-          if (props.addShadowCaster) {
-            props.addShadowCaster(mesh);
-          }
+          // Shadows disabled for performance
+          // mesh.receiveShadows = true;
+          // if (props.addShadowCaster) {
+          //   props.addShadowCaster(mesh);
+          // }
         }
       });
 

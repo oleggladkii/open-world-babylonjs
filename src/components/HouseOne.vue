@@ -5,7 +5,7 @@ div
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted, computed } from "vue";
 import {
   Vector3,
   Scene,
@@ -19,6 +19,7 @@ import {
 import { useLoadModel } from "@/composables/useLoadModel";
 import { useInteractivePointer } from "@/composables/useInteractivePointer";
 import { useCameraAnimation } from "@/composables/useCameraAnimation";
+import { useUiStore } from "@/store/ui";
 
 interface Props {
   scene: Scene | null;
@@ -37,6 +38,9 @@ const {
   dispose: disposePointer,
 } = useInteractivePointer();
 const { animateCameraToTarget, getIsAnimating } = useCameraAnimation();
+const uiStore = useUiStore();
+
+const canInteractWithHouse = computed(() => uiStore.hasInteractedWithCharacter);
 
 let houseInstance: AbstractMesh[] = [];
 let pointerObserver: Observer<PointerInfo> | null = null;
@@ -81,7 +85,9 @@ const createHouse = async () => {
 };
 
 const showHousePointer = () => {
-  showPointer();
+  if (canInteractWithHouse.value) {
+    showPointer();
+  }
 };
 
 const setupPointerInteraction = () => {
@@ -101,7 +107,7 @@ const setupPointerInteraction = () => {
 
     switch (pointerInfo.type) {
       case PointerEventTypes.POINTERMOVE:
-        if (isHouseMesh) {
+        if (isHouseMesh && canInteractWithHouse.value) {
           const canvas = props.scene?.getEngine().getRenderingCanvas();
           if (canvas) {
             canvas.style.cursor = "pointer";
@@ -116,7 +122,7 @@ const setupPointerInteraction = () => {
         break;
 
       case PointerEventTypes.POINTERDOWN:
-        if (isHouseMesh) {
+        if (isHouseMesh && canInteractWithHouse.value) {
           handleHouseClick();
         }
         break;

@@ -382,10 +382,10 @@ const createMergedWalls = () => {
     if (mergedWalls) {
       mergedWalls.name = "mergedHouseWalls";
 
-      // Add to shadow casters if function provided
-      if (props.addShadowCaster) {
-        props.addShadowCaster(mergedWalls);
-      }
+      // Shadows disabled for performance
+      // if (props.addShadowCaster) {
+      //   props.addShadowCaster(mergedWalls);
+      // }
 
       console.log(
         "House walls created with individual physics and merged visuals",

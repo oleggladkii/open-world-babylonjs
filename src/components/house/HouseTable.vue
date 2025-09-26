@@ -24,6 +24,7 @@ import {
   StandardMaterial,
   Color3,
 } from "@babylonjs/core";
+import { useLoadModel } from "../../composables/useLoadModel";
 // import InteractionPrompt from "../InteractionPrompt.vue";
 
 interface Props {
@@ -45,8 +46,10 @@ const emit = defineEmits<{
 
 // Refs
 const tableMesh = ref<Mesh | null>(null);
+const televisionMesh = ref<Mesh | null>(null);
 const isLoaded = ref(false);
 const interactionPosition = ref(new Vector3(-4.5, 0.5, -2.25)); // Position in front of table
+const { loadModel } = useLoadModel();
 
 const createTable = () => {
   if (!props.scene) {
@@ -149,17 +152,58 @@ const createTable = () => {
         props.scene,
       );
 
-      // Enable shadow casting and receiving
-      mergedTable.receiveShadows = true;
-      if (props.addShadowCaster) {
-        props.addShadowCaster(mergedTable);
-      }
+      // Shadows disabled for performance
+      // mergedTable.receiveShadows = true;
+      // if (props.addShadowCaster) {
+      //   props.addShadowCaster(mergedTable);
+      // }
 
       isLoaded.value = true;
       console.log("Red table created successfully");
+
+      // Load television after table is created
+      loadTelevision();
     }
   } catch (error) {
     console.error("Error creating table:", error);
+  }
+};
+
+const loadTelevision = async () => {
+  if (!props.scene) return;
+
+  try {
+    const loadedModel = await loadModel(props.scene, {
+      fileName: "digital_television.glb",
+      rootUrl: "/assets/models/house/",
+      position: new Vector3(-9.2, 0.91, -4.4), // On top of the table
+      rotation: new Vector3(0, Math.PI / 2, 0), // Rotated 90 degrees
+      scaling: new Vector3(0.2, 0.2, 0.2), // Scale down to fit on table
+      castShadows: false, // Disable shadows for performance
+      receiveShadows: false,
+      useCache: true,
+      optimizeMesh: true,
+      name: "digitalTelevision",
+    });
+
+    if (loadedModel && loadedModel.meshes.length > 0) {
+      // Store the main mesh
+      televisionMesh.value = loadedModel.meshes[0] as Mesh;
+
+      // Add physics impostor for collision
+      if (televisionMesh.value) {
+        televisionMesh.value.physicsImpostor = new PhysicsImpostor(
+          televisionMesh.value,
+          PhysicsImpostor.BoxImpostor,
+          { mass: 0, friction: 0.8, restitution: 0 },
+          props.scene,
+        );
+      }
+
+      console.log("Digital television loaded successfully");
+    }
+  } catch (error) {
+    console.error("Error loading television:", error);
   }
 };
 
@@ -177,6 +221,15 @@ const cleanup = () => {
     tableMesh.value.dispose();
     tableMesh.value = null;
   }
+
+  if (televisionMesh.value) {
+    if (televisionMesh.value.physicsImpostor) {
+      televisionMesh.value.physicsImpostor.dispose();
+    }
+    televisionMesh.value.dispose();
+    televisionMesh.value = null;
+  }
+
   isLoaded.value = false;
 };
 
@@ -206,6 +259,7 @@ onUnmounted(() => {
 // Export for other components
 defineExpose({
   tableMesh,
+  televisionMesh,
   isLoaded,
   cleanup,
 });

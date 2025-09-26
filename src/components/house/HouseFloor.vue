@@ -163,10 +163,11 @@ const createFloor = () => {
       props.scene,
     );
 
-    ground1.receiveShadows = true;
-    if (props.addShadowCaster) {
-      props.addShadowCaster(ground1);
-    }
+    // Shadows disabled for performance
+    // ground1.receiveShadows = true;
+    // if (props.addShadowCaster) {
+    //   props.addShadowCaster(ground1);
+    // }
 
     // ====== CARPET IN ROOM 1 (2x2) ======
     // Create carpet mesh slightly above the floor
@@ -237,10 +238,11 @@ const createFloor = () => {
       props.scene,
     );
 
-    ground2.receiveShadows = true;
-    if (props.addShadowCaster) {
-      props.addShadowCaster(ground2);
-    }
+    // Shadows disabled for performance
+    // ground2.receiveShadows = true;
+    // if (props.addShadowCaster) {
+    //   props.addShadowCaster(ground2);
+    // }
 
     console.log("Room 1 floor (10x20) created with wood texture");
     console.log("Carpet (2x2) created in room 1 center with carpet texture");

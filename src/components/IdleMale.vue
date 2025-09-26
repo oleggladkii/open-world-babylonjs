@@ -29,6 +29,7 @@ import { useLoadModel } from "@/composables/useLoadModel";
 import { useInteractivePointer } from "@/composables/useInteractivePointer";
 import { useCameraAnimation } from "@/composables/useCameraAnimation";
 import { useAudio } from "@/composables/useAudio";
+import { useUiStore } from "@/store/ui";
 
 interface Props {
   scene: Scene | null;
@@ -49,6 +50,7 @@ const {
 const { animateCameraToTarget, storeCameraState, getIsAnimating } =
   useCameraAnimation();
 const { loadAudio, playAudio } = useAudio();
+const uiStore = useUiStore();
 
 let maleMeshes: AbstractMesh[] = [];
 const greetingMeshes: AbstractMesh[] = [];
@@ -98,6 +100,9 @@ const switchToGreeting = async () => {
     return;
 
   isPlayingGreeting = true;
+
+  // Mark that player has interacted with character
+  uiStore.setCharacterInteraction(true);
 
   // Hide the interactive pointer above the character
   hidePointer();
