@@ -34,13 +34,19 @@
       :is-active="isActive"
       @light-toggled="handleLightToggled"
     )
+    HouseDoor(
+      v-if="scene"
+      :scene="scene"
+      :add-shadow-caster="addShadowCaster"
+      :position="doorPosition"
+    )
     InteractionPrompt(
       text="Press E to exit"
       :trigger-position="exitPosition"
       :trigger-radius="2"
       :player-position="playerPosition"
       :is-active="isActive"
-      key-binding="E"
+      :key-binding="KEY_CODES.E"
       @interact="handleExit"
     )
     .instructions
@@ -55,22 +61,19 @@ import {
   Scene,
   Vector3,
   HemisphericLight,
-  DirectionalLight,
   FreeCamera,
   MeshBuilder,
   PhysicsImpostor,
-  Ray,
   Scalar,
   Angle,
   Mesh,
-  CascadedShadowGenerator,
-  Color3,
-  StandardMaterial,
+  Observer,
 } from "@babylonjs/core";
 import "@babylonjs/inspector";
 import { CannonJSPlugin } from "@babylonjs/core/Physics/Plugins/cannonJSPlugin";
 import * as CANNON from "cannon";
 import InteractionPrompt from "./InteractionPrompt.vue";
+import { KEY_CODES } from "../constants/keyCodes";
 import HouseWalls from "./house/HouseWalls.vue";
 import HouseFloor from "./house/HouseFloor.vue";
 import HouseCeiling from "./house/HouseCeiling.vue";
@@ -78,6 +81,7 @@ import HouseSofa from "./house/HouseSofa.vue";
 import HouseTable from "./house/HouseTable.vue";
 import HouseWindow from "./house/HouseWindow.vue";
 import HouseLamp from "./house/HouseLamp.vue";
+import HouseDoor from "./house/HouseDoor.vue";
 
 interface Props {
   isActive: boolean;
@@ -86,6 +90,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   isActive: false,
+  onExit: undefined,
 });
 
 // Refs
@@ -94,28 +99,31 @@ const playerPosition = ref<Vector3 | null>(null);
 const currentFPS = ref<number>(0);
 const exitPosition = new Vector3(-5, 1, 9); // Position near the green wall (south wall of first room)
 const windowPosition = new Vector3(-5, 3, -10); // Position in the center of wall1 window opening
+const doorPosition = new Vector3(-5, 0, 9.8); // Door position in center of wall2 (South wall)
 const scene = ref<Scene | null>(null);
+
+// Store references for cleanup
+let engine: Engine | null = null;
+let camera: FreeCamera | null = null;
+let player: Mesh | null = null;
+let ambientLight: HemisphericLight | null = null;
+let exitCheckInterval: number | null = null;
+let beforeRenderObserver: Observer<Scene> | null = null;
+// let shadowGenerator: any = null; // Currently unused - shadows are commented out
 
 // Development mode check
 const isLocalMode = import.meta.env.MODE === "development";
-
-// State
-let engine: Engine | null = null;
-let player: Mesh | null = null;
-let camera: FreeCamera | null = null;
-let beforeRenderObserver: any = null;
-let exitCheckInterval: number | null = null;
-let shadowGenerator: any = null;
 
 // FPS tracking
 let lastTime = performance.now();
 let frameCount = 0;
 
 // Shadow caster helper function
-const addShadowCaster = (mesh: any) => {
-  if (shadowGenerator && mesh) {
-    shadowGenerator.addShadowCaster(mesh);
-  }
+const addShadowCaster = (_mesh: Mesh) => {
+  // Currently unused - shadows are commented out
+  // if (shadowGenerator && mesh) {
+  //   shadowGenerator.addShadowCaster(mesh);
+  // }
 };
 
 const initHouseInterior = async () => {
@@ -140,41 +148,16 @@ const initHouseInterior = async () => {
     camera.inputs.clear(); // Disable default inputs
     camera.rotation.y = Angle.FromDegrees(180).radians();
     // Lighting - General ambient light for all rooms
-    const ambientLight = new HemisphericLight(
+    ambientLight = new HemisphericLight(
       "ambientLight",
       new Vector3(0, 1, 0), // General upward direction for even lighting
       scene.value,
     );
-    ambientLight.intensity = 0.8; // Increased intensity to light all rooms
-
-    // Directional light for shadows - positioned above carpet
-    // const lumpLight = new DirectionalLight(
-    //   "lumpLight",
-    //   new Vector3(-1, 1, -6), // Light direction: straight down
-    //   scene.value,
-    // );
-    // lumpLight.position = new Vector3(-1, 4, -6); // Above carpet at (-5, 0, -4)
-    // lumpLight.intensity = 0.1;
-
-    // Shadow generator with reduced quality for better performance
-    // shadowGenerator = new CascadedShadowGenerator(1024, lumpLight); // Reduced from 2048 to 1024
-    // shadowGenerator.darkness = 0.2; // Reduced darkness
-    // shadowGenerator.setDarkness(0.2);
-    // shadowGenerator.bias = 0.00001; // Reduce shadow acne
-    // shadowGenerator.normalBias = 0.02; // Improve shadow quality
 
     // Physics (Cannon.js) - MOVED BEFORE CHILD COMPONENTS
     const gravity = new Vector3(0, -2, 0); // Reduced gravity
     const cannonPlugin = new CannonJSPlugin(true, 10, CANNON);
     scene.value.enablePhysics(gravity, cannonPlugin);
-
-    // Note: Floor and walls are now handled by separate components
-    // This allows for better organization and optimization through mesh merging
-
-    // Note: Walls are now handled by HouseWalls component
-    // Room 1: 10x20 (unchanged)
-    // Room 2: 10x15 (updated from 10x10)
-    // All walls are merged into a single mesh for optimization
 
     // ====== Player ======
     player = MeshBuilder.CreateBox(
@@ -226,18 +209,6 @@ const initHouseInterior = async () => {
 
     // ====== FPS Controls ======
     const keys: Record<string, boolean> = {};
-
-    // Ground check function (checks for both room floors)
-    const isGrounded = (): boolean => {
-      if (!player || !scene.value) return false;
-      const origin = player.getAbsolutePosition().clone();
-      const rayLen = 0.3;
-      const hit = scene.value.pickWithRay(
-        new Ray(origin, new Vector3(0, -1, 0), rayLen),
-        (mesh) => mesh.name === "room1Floor" || mesh.name === "room2Floor",
-      );
-      return !!(hit && hit.hit);
-    };
 
     // Mouse controls
     const onPointerLockChange = () => {
@@ -555,6 +526,9 @@ const handleUseTable = (tablePosition: Vector3) => {
 
 const handleLightToggled = (isOn: boolean) => {
   console.log(`House lights are now ${isOn ? "ON" : "OFF"}`);
+  if (ambientLight) {
+    ambientLight.intensity = isOn ? 0.8 : 0.35;
+  }
   // You can add additional logic here when lights are toggled
   // For example: update ambient lighting, play sound effects, etc.
 };
@@ -633,7 +607,7 @@ const cleanup = () => {
   currentFPS.value = 0;
   player = null;
   camera = null;
-  shadowGenerator = null;
+  // shadowGenerator = null; // Currently unused
 
   // Reset FPS tracking
   lastTime = performance.now();

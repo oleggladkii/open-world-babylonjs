@@ -1,6 +1,13 @@
 <template lang="pug">
 div
   // Invisible component - table is created programmatically
+  HouseApple(
+    v-if="props.scene && isLoaded"
+    :scene="props.scene"
+    :add-shadow-caster="props.addShadowCaster"
+    :player-position="props.playerPosition"
+    :is-active="props.isActive"
+  )
   //- InteractionPrompt(
   //-   v-if="tableMesh && isLoaded"
   //-   text="Press E to use table"
@@ -25,6 +32,7 @@ import {
   Color3,
 } from "@babylonjs/core";
 import { useLoadModel } from "../../composables/useLoadModel";
+import HouseApple from "./HouseApple.vue";
 // import InteractionPrompt from "../InteractionPrompt.vue";
 
 interface Props {

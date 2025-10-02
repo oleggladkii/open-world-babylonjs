@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from "vue";
 import { Vector3 } from "@babylonjs/core";
+import { KEY_CODES, type KeyCode } from "../constants/keyCodes";
 
 interface Props {
   text: string;
@@ -13,14 +14,14 @@ interface Props {
   triggerRadius?: number;
   playerPosition?: Vector3 | null;
   isActive?: boolean;
-  keyBinding?: string;
+  keyBinding?: KeyCode;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   triggerRadius: 2,
   playerPosition: null,
   isActive: true,
-  keyBinding: "E",
+  keyBinding: KEY_CODES.E,
 });
 
 const emit = defineEmits<{
@@ -42,10 +43,8 @@ const isVisible = computed(() => {
 const handleKeyPress = (event: KeyboardEvent) => {
   if (!isVisible.value) return;
 
-  const key = event.key.toLowerCase();
-  const expectedKey = props.keyBinding.toLowerCase();
-
-  if (key === expectedKey) {
+  // Use layout-independent KeyboardEvent.code
+  if (event.code === props.keyBinding) {
     emit("interact");
   }
 };
