@@ -97,12 +97,10 @@ function makeNoiseTexture(scene: Scene): DynamicTexture {
   let p = 0;
   for (let y = 0; y < SIZE; y++) {
     for (let x = 0; x < SIZE; x++) {
-      // координати в «світі» нойзу
       const u = x / (SIZE / SCALE);
       const v = y / (SIZE / SCALE);
       const n = fbm(u, v); // 0..1
 
-      // лінійний мікс між двома кольорами
       const r = colA[0] + (colB[0] - colA[0]) * n;
       const g = colA[1] + (colB[1] - colA[1]) * n;
       const b = colA[2] + (colB[2] - colA[2]) * n;
@@ -157,17 +155,10 @@ const createFloor = () => {
       {
         mass: 0,
         friction: 0.8,
-        restitution: 0,
-        disableBidirectionalTransformation: false,
+        restitution: 0.3,
       },
       props.scene,
     );
-
-    // Shadows disabled for performance
-    // ground1.receiveShadows = true;
-    // if (props.addShadowCaster) {
-    //   props.addShadowCaster(ground1);
-    // }
 
     // ====== CARPET IN ROOM 1 (2x2) ======
     // Create carpet mesh slightly above the floor
@@ -232,22 +223,9 @@ const createFloor = () => {
       {
         mass: 0,
         friction: 0.8,
-        restitution: 0,
-        disableBidirectionalTransformation: false,
+        restitution: 0.3,
       },
       props.scene,
-    );
-
-    // Shadows disabled for performance
-    // ground2.receiveShadows = true;
-    // if (props.addShadowCaster) {
-    //   props.addShadowCaster(ground2);
-    // }
-
-    console.log("Room 1 floor (10x20) created with wood texture");
-    console.log("Carpet (2x2) created in room 1 center with carpet texture");
-    console.log(
-      "Room 2 floor (10x15) created with procedural concrete texture",
     );
   } catch (error) {
     console.error("Error creating house floor:", error);

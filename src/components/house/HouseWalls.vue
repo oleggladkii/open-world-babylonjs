@@ -327,7 +327,7 @@ const createMergedWalls = () => {
       wall.physicsImpostor = new PhysicsImpostor(
         wall,
         PhysicsImpostor.BoxImpostor,
-        { mass: 0, friction: 0.8, restitution: 0 },
+        { mass: 0, friction: 0.8, restitution: 0.3 },
         props.scene!,
       );
     });
@@ -363,38 +363,28 @@ const createMergedWalls = () => {
     doorwaySideLeft.physicsImpostor = new PhysicsImpostor(
       doorwaySideLeft,
       PhysicsImpostor.BoxImpostor,
-      { mass: 0, friction: 0.8, restitution: 0 },
+      { mass: 0, friction: 0.8, restitution: 0.3 },
       props.scene!,
     );
 
     doorwaySideRight.physicsImpostor = new PhysicsImpostor(
       doorwaySideRight,
       PhysicsImpostor.BoxImpostor,
-      { mass: 0, friction: 0.8, restitution: 0 },
+      { mass: 0, friction: 0.8, restitution: 0.3 },
       props.scene!,
     );
 
     individualWalls.push(doorwaySideLeft, doorwaySideRight);
 
-    // For visual optimization, still merge walls but keep physics on individual walls
-    mergedWalls = Mesh.MergeMeshes(walls, true, true, undefined, false, true);
+    // Skip merging to preserve individual wall physics
+    // mergedWalls = Mesh.MergeMeshes(walls, true, true, undefined, false, true);
 
-    if (mergedWalls) {
-      mergedWalls.name = "mergedHouseWalls";
+    console.log(
+      "House walls created with individual physics (no merging to preserve physics)",
+    );
+    console.log("Room 1: 10x20 (unchanged), Room 2: 10x10 (updated size)");
 
-      // Shadows disabled for performance
-      // if (props.addShadowCaster) {
-      //   props.addShadowCaster(mergedWalls);
-      // }
-
-      console.log(
-        "House walls created with individual physics and merged visuals",
-      );
-      console.log("Room 1: 10x20 (unchanged), Room 2: 10x10 (updated size)");
-    }
-
-    // Don't dispose individual walls immediately since they have physics
-    // walls.forEach((wall) => wall.dispose());
+    // Individual walls kept active for physics collision detection
   } catch (error) {
     console.error("Error creating house walls:", error);
   }

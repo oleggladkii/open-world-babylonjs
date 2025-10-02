@@ -94,7 +94,7 @@ const sceneRef = ref<Scene | null>(null);
 const addShadowCasterRef = ref<((mesh: AbstractMesh) => void) | null>(null);
 const cameraRef = ref<ArcRotateCamera | null>(null);
 const isNight = ref(true); // Default to night mode to show street lamp lights
-const showHouseInterior = ref(true);
+const showHouseInterior = ref(false);
 
 // Scene configuration includes lighting and shadow settings
 const sceneConfig = {

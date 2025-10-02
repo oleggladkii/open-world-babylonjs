@@ -106,8 +106,7 @@ const loadSofa = async () => {
         sofaCollisionBox,
         PhysicsImpostor.BoxImpostor,
         {
-          mass: 0, // Static object (won't fall due to gravity)
-          // mass: 50, // Uncomment this and comment line above if you want sofa to fall with physics
+          mass: 0,
           friction: 0.8,
           restitution: 0,
         },

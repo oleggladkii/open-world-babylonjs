@@ -37,7 +37,7 @@ const WINDOW_CONFIG = {
     depth: 0.3,
   },
   glass: {
-    thickness: 0.05,
+    thickness: 0.2, // Increased for better collision detection
   },
   sill: {
     width: 3.4, // Slightly wider than window
@@ -202,6 +202,26 @@ const createWindow = (): Mesh[] => {
   windowSill.material.zOffset = -1;
   meshes.push(windowSill);
 
+  // Create invisible collision mesh to cover entire window opening
+  const windowCollision = MeshBuilder.CreateBox(
+    "windowCollision",
+    {
+      width: WINDOW_CONFIG.width - 2 * WINDOW_CONFIG.frame.thickness, // Inner window width
+      height: WINDOW_CONFIG.height - 2 * WINDOW_CONFIG.frame.thickness, // Inner window height
+      depth: 0.3, // Thick enough for reliable collision
+    },
+    props.scene,
+  );
+  windowCollision.position = props.position.clone();
+  windowCollision.isVisible = false; // Invisible collision mesh
+  windowCollision.physicsImpostor = new PhysicsImpostor(
+    windowCollision,
+    PhysicsImpostor.BoxImpostor,
+    { mass: 0, friction: 0.8, restitution: 0.3 },
+    props.scene!,
+  );
+  meshes.push(windowCollision);
+
   // Apply rotation if specified
   if (
     props.rotation &&
@@ -212,7 +232,7 @@ const createWindow = (): Mesh[] => {
     });
   }
 
-  // Add physics to solid parts (frame and sill, but not glass)
+  // Add physics to solid parts (frame, sill, and glass for collision)
   const solidMeshes = [
     topFrame,
     bottomFrame,
@@ -220,12 +240,14 @@ const createWindow = (): Mesh[] => {
     rightFrame,
     middleFrame,
     windowSill,
+    leftGlass,
+    rightGlass,
   ];
   solidMeshes.forEach((mesh) => {
     mesh.physicsImpostor = new PhysicsImpostor(
       mesh,
       PhysicsImpostor.BoxImpostor,
-      { mass: 0, friction: 0.8, restitution: 0 },
+      { mass: 0, friction: 0.8, restitution: 0.3 },
       props.scene!,
     );
   });

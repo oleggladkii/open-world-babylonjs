@@ -11,6 +11,7 @@ import {
   Mesh,
   StandardMaterial,
   Color3,
+  PhysicsImpostor,
 } from "@babylonjs/core";
 
 interface Props {
@@ -48,6 +49,15 @@ const createCeiling = () => {
     ceiling1.position.set(-5, 6, 0); // At height 6 (wall height)
 
     ceiling1.material = ceilingMaterial;
+
+    // Add physics impostor for bouncing
+    ceiling1.physicsImpostor = new PhysicsImpostor(
+      ceiling1,
+      PhysicsImpostor.BoxImpostor,
+      { mass: 0, friction: 0.8, restitution: 0.3 },
+      props.scene,
+    );
+
     // Shadows disabled for performance
     // ceiling1.receiveShadows = false;
     // if (props.addShadowCaster) {
@@ -64,6 +74,15 @@ const createCeiling = () => {
     ceiling2.position.set(5, 6, 2.5); // At height 6, center at (5, 6, 2.5)
 
     ceiling2.material = ceilingMaterial;
+
+    // Add physics impostor for bouncing
+    ceiling2.physicsImpostor = new PhysicsImpostor(
+      ceiling2,
+      PhysicsImpostor.BoxImpostor,
+      { mass: 0, friction: 0.8, restitution: 0.3 },
+      props.scene,
+    );
+
     // Shadows disabled for performance
     // ceiling2.receiveShadows = false;
     // if (props.addShadowCaster) {
@@ -79,10 +98,16 @@ const createCeiling = () => {
 
 const cleanup = () => {
   if (ceiling1) {
+    if (ceiling1.physicsImpostor) {
+      ceiling1.physicsImpostor.dispose();
+    }
     ceiling1.dispose();
     ceiling1 = null;
   }
   if (ceiling2) {
+    if (ceiling2.physicsImpostor) {
+      ceiling2.physicsImpostor.dispose();
+    }
     ceiling2.dispose();
     ceiling2 = null;
   }
