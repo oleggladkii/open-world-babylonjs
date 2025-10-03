@@ -30,6 +30,7 @@ import {
 } from "@babylonjs/core";
 import InteractionPrompt from "../InteractionPrompt.vue";
 import { KEY_CODES } from "../../constants/keyCodes";
+import appleTextureUrl from "../../assets/textures/apple.jpg";
 
 interface Props {
   scene: Scene | null;
@@ -79,10 +80,7 @@ const createApple = () => {
 
     const appleMaterial = new StandardMaterial("appleMaterial", props.scene);
 
-    const appleTexture = new Texture(
-      "/src/assets/textures/apple.jpg",
-      props.scene,
-    );
+    const appleTexture = new Texture(appleTextureUrl, props.scene);
 
     appleMaterial.diffuseTexture = appleTexture;
     appleMaterial.specularColor = new Color3(0.2, 0.2, 0.2); // Low specular for matte finish

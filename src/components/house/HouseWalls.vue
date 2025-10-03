@@ -12,6 +12,7 @@ import {
   StandardMaterial,
   Color3,
   Mesh,
+  Texture,
 } from "@babylonjs/core";
 
 interface Props {
@@ -53,9 +54,28 @@ const createWallGeometries = (): Mesh[] => {
   const walls: Mesh[] = [];
 
   // Materials
-  // Light gray material for room 1 walls (20x20)
-  const lightGrayMaterial = new StandardMaterial("lightGrayMat", props.scene);
-  lightGrayMaterial.diffuseColor = new Color3(0.24, 0.24, 0.24); // rgba(210, 215, 220, 1)
+  // Function to create concrete texture with custom scaling
+  const createConcreteTexture = (uScale: number, vScale: number): Texture => {
+    const texture = new Texture(
+      "/assets/textures/Concrete042A.jpg",
+      props.scene!,
+    );
+    texture.uScale = uScale;
+    texture.vScale = vScale;
+    return texture;
+  };
+
+  // Function to create material with concrete texture
+  const createConcreteMaterial = (
+    name: string,
+    uScale: number,
+    vScale: number,
+  ): StandardMaterial => {
+    const material = new StandardMaterial(name, props.scene!);
+    material.diffuseTexture = createConcreteTexture(uScale, vScale);
+    material.diffuseColor = new Color3(0.8, 0.8, 0.8);
+    return material;
+  };
 
   const greenMaterial = new StandardMaterial("greenMat", props.scene);
   greenMaterial.diffuseColor = new Color3(0, 1, 0);
@@ -91,7 +111,7 @@ const createWallGeometries = (): Mesh[] => {
     props.scene,
   );
   wall1Left.position.set(-5 - windowWidth / 2 - (10 - windowWidth) / 4, 3, -10);
-  wall1Left.material = lightGrayMaterial;
+  wall1Left.material = createConcreteMaterial("wall1LeftMat", 1.75, 3); // 3.5 width, 6 height
   walls.push(wall1Left);
 
   // Right part of wall1 (east side of window)
@@ -109,7 +129,7 @@ const createWallGeometries = (): Mesh[] => {
     3,
     -10,
   );
-  wall1Right.material = lightGrayMaterial;
+  wall1Right.material = createConcreteMaterial("wall1RightMat", 1.75, 3); // 3.5 width, 6 height
   walls.push(wall1Right);
 
   // Top part of wall1 (above window)
@@ -128,7 +148,7 @@ const createWallGeometries = (): Mesh[] => {
     windowCenterY + windowHeight / 2 + topHeight / 2, // Position above window
     -10,
   );
-  wall1Top.material = lightGrayMaterial;
+  wall1Top.material = createConcreteMaterial("wall1TopMat", 1.5, 0.5); // 3 width, 1 height
   walls.push(wall1Top);
 
   // Bottom part of wall1 (below window)
@@ -147,7 +167,7 @@ const createWallGeometries = (): Mesh[] => {
     bottomHeight / 2, // Position below window
     -10,
   );
-  wall1Bottom.material = lightGrayMaterial;
+  wall1Bottom.material = createConcreteMaterial("wall1BottomMat", 1.5, 0.5); // 3 width, 1 height
   walls.push(wall1Bottom);
 
   // South wall (Light Gray)
@@ -157,7 +177,7 @@ const createWallGeometries = (): Mesh[] => {
     props.scene,
   );
   wall2.position.set(-5, 3, 10); // Updated Y position for height 6
-  wall2.material = lightGrayMaterial;
+  wall2.material = createConcreteMaterial("wall2Mat", 5, 3); // 10 width, 6 height
   walls.push(wall2);
 
   // West wall (Light Gray)
@@ -167,7 +187,7 @@ const createWallGeometries = (): Mesh[] => {
     props.scene,
   );
   wall3.position.set(-10, 3, 0); // Updated Y position for height 6
-  wall3.material = lightGrayMaterial;
+  wall3.material = createConcreteMaterial("wall3Mat", 1.5, 8); // 0.5 width, 20 depth
   walls.push(wall3);
 
   // East wall (Light Gray) - with doorway from z=-2.75 to z=2.75
@@ -182,7 +202,7 @@ const createWallGeometries = (): Mesh[] => {
     props.scene,
   );
   wall4a.position.set(0, 3, -5.375); // Updated Y position for height 6
-  wall4a.material = lightGrayMaterial;
+  wall4a.material = createConcreteMaterial("wall4aMat", 1.5, 6); // 0.25 width, 10.25 depth
   walls.push(wall4a);
 
   // South part
@@ -196,8 +216,166 @@ const createWallGeometries = (): Mesh[] => {
     props.scene,
   );
   wall4b.position.set(0, 3, 6.375); // Updated Y position for height 6
-  wall4b.material = lightGrayMaterial;
+  wall4b.material = createConcreteMaterial("wall4bMat", 1.5, 3); // 0.25 width, 7.25 depth
   walls.push(wall4b);
+
+  // ====== Room 1 Baseboards (Плінтуси) ======
+  const baseboardHeight = 0.15; // Height of baseboard
+  const baseboardDepth = 0.05; // Depth of baseboard
+
+  // Function to create baseboard material
+  const createBaseboardMaterial = (): StandardMaterial => {
+    const material = new StandardMaterial("baseboardMat", props.scene!);
+    material.diffuseColor = new Color3(0.4, 0.3, 0.2); // Dark brown wood color
+    return material;
+  };
+
+  const baseboardMaterial = createBaseboardMaterial();
+
+  // Function to add physics to baseboard
+  const addBaseboardPhysics = (baseboard: Mesh) => {
+    baseboard.physicsImpostor = new PhysicsImpostor(
+      baseboard,
+      PhysicsImpostor.BoxImpostor,
+      { mass: 0, friction: 0.8, restitution: 0.3 },
+      props.scene!,
+    );
+  };
+
+  // North wall baseboards (around window)
+  // Left baseboard
+  const baseboard1Left = MeshBuilder.CreateBox(
+    "baseboard1-North-Left",
+    {
+      width: (10 - windowWidth) / 2, // 3.5 units wide
+      height: baseboardHeight,
+      depth: baseboardDepth,
+    },
+    props.scene,
+  );
+  baseboard1Left.position.set(
+    -5 - windowWidth / 2 - (10 - windowWidth) / 4,
+    baseboardHeight / 2,
+    -10 + WALL_CONFIG.thickness - 0.25 + baseboardDepth / 2,
+  );
+  baseboard1Left.material = baseboardMaterial;
+  addBaseboardPhysics(baseboard1Left);
+  walls.push(baseboard1Left);
+
+  // Right baseboard
+  const baseboard1Right = MeshBuilder.CreateBox(
+    "baseboard1-North-Right",
+    {
+      width: (10 - windowWidth) / 2, // 3.5 units wide
+      height: baseboardHeight,
+      depth: baseboardDepth,
+    },
+    props.scene,
+  );
+  baseboard1Right.position.set(
+    -5 + windowWidth / 2 + (10 - windowWidth) / 4,
+    baseboardHeight / 2,
+    -10 + WALL_CONFIG.thickness - 0.25 + baseboardDepth / 2,
+  );
+  baseboard1Right.material = baseboardMaterial;
+  addBaseboardPhysics(baseboard1Right);
+  walls.push(baseboard1Right);
+
+  // Window bottom baseboard
+  const baseboard1Window = MeshBuilder.CreateBox(
+    "baseboard1-Window",
+    {
+      width: windowWidth,
+      height: baseboardHeight,
+      depth: baseboardDepth,
+    },
+    props.scene,
+  );
+  baseboard1Window.position.set(
+    windowCenterX,
+    baseboardHeight / 2,
+    -10 + WALL_CONFIG.thickness - 0.25 + baseboardDepth / 2,
+  );
+  baseboard1Window.material = baseboardMaterial;
+  addBaseboardPhysics(baseboard1Window);
+  walls.push(baseboard1Window);
+
+  // South wall baseboard
+  const baseboard2 = MeshBuilder.CreateBox(
+    "baseboard2-South",
+    {
+      width: 10,
+      height: baseboardHeight,
+      depth: baseboardDepth,
+    },
+    props.scene,
+  );
+  baseboard2.position.set(
+    -5,
+    baseboardHeight / 2,
+    10 - WALL_CONFIG.thickness + 0.25 - baseboardDepth / 2,
+  );
+  baseboard2.material = baseboardMaterial;
+  addBaseboardPhysics(baseboard2);
+  walls.push(baseboard2);
+
+  // West wall baseboard
+  const baseboard3 = MeshBuilder.CreateBox(
+    "baseboard3-West",
+    {
+      width: baseboardDepth,
+      height: baseboardHeight,
+      depth: 20,
+    },
+    props.scene,
+  );
+  baseboard3.position.set(
+    -10 + WALL_CONFIG.thickness - 0.25 + baseboardDepth / 2,
+    baseboardHeight / 2,
+    0,
+  );
+  baseboard3.material = baseboardMaterial;
+  addBaseboardPhysics(baseboard3);
+  walls.push(baseboard3);
+
+  // East wall baseboards (around doorway)
+  // North part baseboard
+  const baseboard4a = MeshBuilder.CreateBox(
+    "baseboard4a-East-North",
+    {
+      width: baseboardDepth,
+      height: baseboardHeight,
+      depth: 10.25,
+    },
+    props.scene,
+  );
+  baseboard4a.position.set(
+    -WALL_CONFIG.thickness / 2 + 0.125 - baseboardDepth / 2,
+    baseboardHeight / 2,
+    -5.375,
+  );
+  baseboard4a.material = baseboardMaterial;
+  addBaseboardPhysics(baseboard4a);
+  walls.push(baseboard4a);
+
+  // South part baseboard
+  const baseboard4b = MeshBuilder.CreateBox(
+    "baseboard4b-East-South",
+    {
+      width: baseboardDepth,
+      height: baseboardHeight,
+      depth: 7.25,
+    },
+    props.scene,
+  );
+  baseboard4b.position.set(
+    -WALL_CONFIG.thickness / 2 + 0.125 - baseboardDepth / 2,
+    baseboardHeight / 2,
+    6.375,
+  );
+  baseboard4b.material = baseboardMaterial;
+  addBaseboardPhysics(baseboard4b);
+  walls.push(baseboard4b);
 
   // ====== Room 2 Walls (10x15) - UPDATED ======
   // West wall (GRAY) - with doorway from z=-2.75 to z=2.75

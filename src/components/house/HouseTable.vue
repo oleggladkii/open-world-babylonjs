@@ -30,6 +30,8 @@ import {
   PhysicsImpostor,
   StandardMaterial,
   Color3,
+  VideoTexture,
+  Angle,
 } from "@babylonjs/core";
 import { useLoadModel } from "../../composables/useLoadModel";
 import HouseApple from "./HouseApple.vue";
@@ -55,6 +57,8 @@ const emit = defineEmits<{
 // Refs
 const tableMesh = ref<Mesh | null>(null);
 const televisionMesh = ref<Mesh | null>(null);
+const screenPlane = ref<Mesh | null>(null);
+const videoTexture = ref<VideoTexture | null>(null);
 const isLoaded = ref(false);
 const interactionPosition = ref(new Vector3(-4.5, 0.5, -2.25)); // Position in front of table
 const { loadModel } = useLoadModel();
@@ -177,6 +181,74 @@ const createTable = () => {
   }
 };
 
+const addVideoToTV = () => {
+  if (!props.scene) return;
+
+  try {
+    // Create video element
+    const videoElement = document.createElement("video");
+    videoElement.src = "/assets/videos/tv-placeholder.mp4";
+    videoElement.loop = true;
+    videoElement.muted = true; // Muted for autoplay
+    videoElement.autoplay = true;
+    videoElement.playsInline = true;
+
+    // Create video texture
+    videoTexture.value = new VideoTexture(
+      "tvVideoTexture",
+      videoElement,
+      props.scene,
+      false,
+      false,
+    );
+
+    videoTexture.value.uScale = -1;
+    // Create a rectangular plane for the TV screen
+    screenPlane.value = MeshBuilder.CreatePlane(
+      "tvScreen",
+      {
+        width: 1.825, // Screen width
+        height: 1.14, // Screen height (16:9 aspect ratio)
+      },
+      props.scene,
+    );
+
+    // Position the screen plane in front of the TV
+    screenPlane.value.position.set(-9.1, 1.69, -4.48); // Slightly in front of TV
+    screenPlane.value.rotation.y = Angle.FromDegrees(90).radians();
+
+    // Create material for the screen
+    const screenMaterial = new StandardMaterial(
+      "tvScreenMaterial",
+      props.scene,
+    );
+    screenMaterial.diffuseTexture = videoTexture.value;
+    screenMaterial.emissiveTexture = videoTexture.value; // Make it glow
+    screenMaterial.emissiveColor = new Color3(0.8, 0.8, 0.8); // Bright emission
+    screenMaterial.backFaceCulling = false; // Show both sides
+
+    // Apply material to screen plane
+    screenPlane.value.material = screenMaterial;
+
+    // Add physics impostor for collision with apple
+    screenPlane.value.physicsImpostor = new PhysicsImpostor(
+      screenPlane.value,
+      PhysicsImpostor.BoxImpostor,
+      { mass: 0, friction: 0.8, restitution: 0.3 },
+      props.scene,
+    );
+
+    // Start playing the video
+    videoElement.play().catch((error) => {
+      console.warn("Video autoplay failed:", error);
+    });
+
+    console.log("Video screen plane created successfully");
+  } catch (error) {
+    console.error("Error adding video to TV:", error);
+  }
+};
+
 const loadTelevision = async () => {
   if (!props.scene) return;
 
@@ -208,6 +280,9 @@ const loadTelevision = async () => {
         );
       }
 
+      // Add video to TV screen
+      addVideoToTV();
+
       console.log("Digital television loaded successfully");
     }
   } catch (error) {
@@ -236,6 +311,20 @@ const cleanup = () => {
     }
     televisionMesh.value.dispose();
     televisionMesh.value = null;
+  }
+
+  if (screenPlane.value) {
+    if (screenPlane.value.physicsImpostor) {
+      screenPlane.value.physicsImpostor.dispose();
+    }
+    screenPlane.value.dispose();
+    screenPlane.value = null;
+  }
+
+  // Dispose video texture
+  if (videoTexture.value) {
+    videoTexture.value.dispose();
+    videoTexture.value = null;
   }
 
   isLoaded.value = false;

@@ -121,9 +121,6 @@ let frameCount = 0;
 // Shadow caster helper function
 const addShadowCaster = (_mesh: Mesh) => {
   // Currently unused - shadows are commented out
-  // if (shadowGenerator && mesh) {
-  //   shadowGenerator.addShadowCaster(mesh);
-  // }
 };
 
 const initHouseInterior = async () => {
