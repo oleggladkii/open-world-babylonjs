@@ -307,12 +307,12 @@ const toggleLights = () => {
 
   // Toggle all lamp lights with reduced intensity for better performance
   lampLights.value.forEach((light) => {
-    light.intensity = isLightOn.value ? 0.8 : 0;
+    light.intensity = isLightOn.value ? 0.5 : 0; // Reduced from 0.8
   });
 
-  // Toggle central ceiling light
+  // Toggle central ceiling light with reduced intensity
   ceilingLights.value.forEach((light) => {
-    light.intensity = isLightOn.value ? 1.5 : 0;
+    light.intensity = isLightOn.value ? 1.0 : 0; // Reduced from 1.5
   });
 
   // Update ceiling lamp materials (glow effect)

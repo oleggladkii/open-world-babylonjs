@@ -54,6 +54,9 @@ const emit = defineEmits<{
   useTable: [position: Vector3];
 }>();
 
+// Performance: Disable video for better FPS (set to false to improve performance)
+const ENABLE_TV_VIDEO = true; // Set to false to disable video and improve FPS significantly
+
 // Refs
 const tableMesh = ref<Mesh | null>(null);
 const televisionMesh = ref<Mesh | null>(null);
@@ -182,27 +185,44 @@ const createTable = () => {
 };
 
 const addVideoToTV = () => {
-  if (!props.scene) return;
+  if (!props.scene || !ENABLE_TV_VIDEO) {
+    console.log("TV video disabled for performance");
+    return;
+  }
 
   try {
-    // Create video element
+    // Create video element with performance optimizations
     const videoElement = document.createElement("video");
     videoElement.src = "/assets/videos/tv-placeholder.mp4";
     videoElement.loop = true;
     videoElement.muted = true; // Muted for autoplay
     videoElement.autoplay = true;
     videoElement.playsInline = true;
+    
+    // Performance optimizations for video
+    videoElement.width = 256; // Reduce video resolution for better performance
+    videoElement.height = 144; // 16:9 ratio at lower quality
+    videoElement.playbackRate = 1.0; // Normal speed
 
-    // Create video texture
+    // Create video texture with performance settings
     videoTexture.value = new VideoTexture(
       "tvVideoTexture",
       videoElement,
       props.scene,
-      false,
-      false,
+      false, // Not inverted
+      false, // Not mirrored
+      VideoTexture.TRILINEAR_SAMPLINGMODE, // Better quality filtering
+      {
+        autoPlay: true,
+        autoUpdateTexture: true,
+      },
     );
 
     videoTexture.value.uScale = -1;
+    
+    // Performance: Update video texture less frequently
+    videoTexture.value.updateSamplingMode(VideoTexture.BILINEAR_SAMPLINGMODE); // Lower quality = better FPS
+    
     // Create a rectangular plane for the TV screen
     screenPlane.value = MeshBuilder.CreatePlane(
       "tvScreen",

@@ -13,7 +13,9 @@ import {
   Color3,
   Mesh,
   Texture,
+  Angle,
 } from "@babylonjs/core";
+import bricksTextureUrl from "../../assets/textures/bricks.jpg";
 
 interface Props {
   scene: Scene | null;
@@ -65,6 +67,14 @@ const createWallGeometries = (): Mesh[] => {
     return texture;
   };
 
+  // Function to create bricks texture with custom scaling
+  const createBricksTexture = (uScale: number, vScale: number): Texture => {
+    const texture = new Texture(bricksTextureUrl, props.scene!);
+    texture.uScale = uScale;
+    texture.vScale = vScale;
+    return texture;
+  };
+
   // Function to create material with concrete texture
   const createConcreteMaterial = (
     name: string,
@@ -74,6 +84,19 @@ const createWallGeometries = (): Mesh[] => {
     const material = new StandardMaterial(name, props.scene!);
     material.diffuseTexture = createConcreteTexture(uScale, vScale);
     material.diffuseColor = new Color3(0.8, 0.8, 0.8);
+    return material;
+  };
+
+  // Function to create material with bricks texture
+  const createBricksMaterial = (
+    name: string,
+    uScale: number,
+    vScale: number,
+  ): StandardMaterial => {
+    const material = new StandardMaterial(name, props.scene!);
+    material.diffuseTexture = createBricksTexture(uScale, vScale);
+    material.diffuseColor = new Color3(1, 1, 1); // White to show true brick color
+    material.specularColor = new Color3(0.1, 0.1, 0.1); // Low specular for matte bricks
     return material;
   };
 
@@ -377,8 +400,8 @@ const createWallGeometries = (): Mesh[] => {
   addBaseboardPhysics(baseboard4b);
   walls.push(baseboard4b);
 
-  // ====== Room 2 Walls (10x15) - UPDATED ======
-  // West wall (GRAY) - with doorway from z=-2.75 to z=2.75
+  // ====== Room 2 Walls (10x15) - UPDATED WITH BRICKS TEXTURE ======
+  // West wall (BRICKS) - with doorway from z=-2.75 to z=2.75
   // North part
   const wall5a = MeshBuilder.CreateBox(
     "wall5a-West2-North",
@@ -389,52 +412,55 @@ const createWallGeometries = (): Mesh[] => {
     },
     props.scene,
   );
-  wall5a.position.set(0.25, 3, -5.375); // Updated Y position for height 6
-  wall5a.material = grayMaterial;
+  wall5a.position.set(0.25, 3, -3.375); // Updated Y position for height 6
+  wall5a.material = createBricksMaterial("room2BricksMat", 1, 3.5);
+  wall5a.rotation.x = Angle.FromDegrees(90).radians();
   walls.push(wall5a);
 
   // // South part (from z=2.75 to z=15) - EXTENDED
   const wall5b = MeshBuilder.CreateBox(
     "wall5b-West2-South",
     {
-      width: WALL_CONFIG.thickness / 2,
-      height: WALL_CONFIG.height,
+      width: WALL_CONFIG.height,
+      height: WALL_CONFIG.thickness / 2,
       depth: 7.25,
     },
     props.scene,
   );
-  wall5b.position.set(0.25, 3, 6.375); // Updated Y position for height 6
-  wall5b.material = grayMaterial;
+  wall5b.position.set(0.25, 3, 6.5); // Updated Y position for height 6
+  wall5b.material = createBricksMaterial("room2BricksMat", 1, 2);
+  wall5b.rotation.z = Angle.FromDegrees(90).radians();
   walls.push(wall5b);
 
-  // // North wall (GRAY) - EXTENDED
+  // // North wall (BRICKS) - EXTENDED
   const wall5c = MeshBuilder.CreateBox(
     "wall5c-North2",
     { width: 10, height: WALL_CONFIG.height, depth: WALL_CONFIG.thickness },
     props.scene,
   );
   wall5c.position.set(5, 3, -5); // Updated Y position for height 6
-  wall5c.material = grayMaterial;
+  wall5c.material = createBricksMaterial("room2BricksMat", 1.5, 2);
   walls.push(wall5c);
 
-  // // South wall (GRAY) - NEW POSITION
+  // // South wall (BRICKS) - NEW POSITION
   const wall6 = MeshBuilder.CreateBox(
     "wall6-South2",
     { width: 10, height: WALL_CONFIG.height, depth: WALL_CONFIG.thickness },
     props.scene,
   );
   wall6.position.set(5, 3, 10); // Updated Y position for height 6
-  wall6.material = grayMaterial;
+  wall6.material = createBricksMaterial("room2BricksMat", 1.5, 2);
   walls.push(wall6);
 
-  // // East wall (GRAY) - EXTENDED
+  // // East wall (BRICKS) - EXTENDED
   const wall7 = MeshBuilder.CreateBox(
     "wall7-East2",
-    { width: WALL_CONFIG.thickness, height: WALL_CONFIG.height, depth: 15 },
+    { width: WALL_CONFIG.thickness, height: 15, depth: 6 },
     props.scene,
   );
   wall7.position.set(10, 3, 2.5); // Updated Y position for height 6
-  wall7.material = grayMaterial;
+  wall7.material = createBricksMaterial("room2BricksMat", 2.2, 2);
+  wall7.rotation.x = Angle.FromDegrees(90).radians();
   walls.push(wall7);
 
   // ====== DOORWAY ARCH (RED) ======

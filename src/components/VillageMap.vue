@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, watch, nextTick } from "vue";
 import {
   Engine,
   Scene,
@@ -67,7 +67,7 @@ import {
   Angle,
 } from "@babylonjs/core";
 import { useScene } from "@/composables/useScene";
-import { createPostProcessing } from "@/composables/usePostProcessing";
+import { usePostProcessing } from "@/composables/usePostProcessing";
 import { useRoads } from "@/composables/useRoads";
 import WalkingFemale from "@/components/WalkingFemale.vue";
 import StreetLamp from "@/components/StreetLamp.vue";
@@ -94,7 +94,7 @@ const sceneRef = ref<Scene | null>(null);
 const addShadowCasterRef = ref<((mesh: AbstractMesh) => void) | null>(null);
 const cameraRef = ref<ArcRotateCamera | null>(null);
 const isNight = ref(true); // Default to night mode to show street lamp lights
-const showHouseInterior = ref(false);
+const showHouseInterior = ref(true);
 
 // Scene configuration includes lighting and shadow settings
 const sceneConfig = {
@@ -111,6 +111,11 @@ const sceneConfig = {
 
 const { createScene, addShadowCaster, disposeScene } = useScene();
 const { createRoads } = useRoads();
+const {
+  createPostProcessing: createPP,
+  setQuality: setPostProcessingQuality,
+  dispose: disposePostProcessing,
+} = usePostProcessing();
 
 const createCamera = (
   scene: Scene,
@@ -159,9 +164,11 @@ const createRTSScene = async () => {
   camera = createCamera(scene, canvasRef.value);
   cameraRef.value = camera;
 
-  // Add post-processing effects
+  // Add post-processing effects with quality from store
   if (camera && camera.getClassName() === "ArcRotateCamera") {
-    createPostProcessing(scene, camera as ArcRotateCamera);
+    createPP(scene, camera as ArcRotateCamera, {
+      quality: uiStore.graphicsQuality,
+    });
   }
 
   // Lighting and shadows are now handled by useScene composable automatically
@@ -321,6 +328,7 @@ const initializeMainScene = async () => {
     cleanup = () => {
       console.log("Cleaning up main scene");
       window.removeEventListener("resize", result.handleResize);
+      disposePostProcessing();
       disposeScene();
       if (result.engine) {
         result.engine.dispose();
@@ -338,6 +346,14 @@ const initializeMainScene = async () => {
 };
 
 const isLocalMode = import.meta.env.MODE === "development";
+
+// Watch for graphics quality changes
+watch(
+  () => uiStore.graphicsQuality,
+  (newQuality) => {
+    setPostProcessingQuality(newQuality);
+  },
+);
 
 // Watch for showHouseInterior changes to manage scene lifecycle
 watch(
@@ -472,16 +488,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.wrapper {
-  /* width: 100%;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center; */
-}
 canvas {
-  /* width: calc(100% - 48px); */
-  /* height: calc(100vh - 48px); */
   width: 100%;
   height: 100vh;
 }

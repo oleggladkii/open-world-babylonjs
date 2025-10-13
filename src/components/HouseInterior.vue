@@ -40,6 +40,22 @@
       :add-shadow-caster="addShadowCaster"
       :position="doorPosition"
     )
+    GarageGate(
+      v-if="scene"
+      :scene="scene"
+      :add-shadow-caster="addShadowCaster"
+      :position="garageGatePosition"
+    )
+    WorkDesk(
+      v-if="scene"
+      :scene="scene"
+      :position="workDeskPosition"
+    )
+    Bike(
+      v-if="scene"
+      :scene="scene"
+      :position="bikePosition"
+    )
     InteractionPrompt(
       text="Press E to exit"
       :trigger-position="exitPosition"
@@ -82,6 +98,9 @@ import HouseTable from "./house/HouseTable.vue";
 import HouseWindow from "./house/HouseWindow.vue";
 import HouseLamp from "./house/HouseLamp.vue";
 import HouseDoor from "./house/HouseDoor.vue";
+import GarageGate from "./house/GarageGate.vue";
+import WorkDesk from "./house/WorkDesk.vue";
+import Bike from "./house/Bike.vue";
 
 interface Props {
   isActive: boolean;
@@ -97,9 +116,12 @@ const props = withDefaults(defineProps<Props>(), {
 const canvasRef = ref<HTMLCanvasElement>();
 const playerPosition = ref<Vector3 | null>(null);
 const currentFPS = ref<number>(0);
-const exitPosition = new Vector3(-5, 1, 9); // Position near the green wall (south wall of first room)
-const windowPosition = new Vector3(-5, 3, -10); // Position in the center of wall1 window opening
-const doorPosition = new Vector3(-5, 0, 9.8); // Door position in center of wall2 (South wall)
+const exitPosition = new Vector3(-5, 1, 9);
+const windowPosition = new Vector3(-5, 3, -10);
+const doorPosition = new Vector3(-5, 0, 9.8);
+const garageGatePosition = new Vector3(5, 3, 9.7);
+const workDeskPosition = new Vector3(2.5, 0, -3.7);
+const bikePosition = new Vector3(1, 0.6, 5);
 const scene = ref<Scene | null>(null);
 
 // Store references for cleanup
@@ -118,8 +140,8 @@ const isLocalMode = import.meta.env.MODE === "development";
 let lastTime = performance.now();
 let frameCount = 0;
 
-// Shadow caster helper function
-const addShadowCaster = (_mesh: Mesh) => {
+// Shadow caster helper function (currently unused)
+const addShadowCaster = () => {
   // Currently unused - shadows are commented out
 };
 
@@ -140,16 +162,21 @@ const initHouseInterior = async () => {
     scene.value.skipPointerMovePicking = true; // Skip pointer move picking for better performance
     scene.value.constantlyUpdateMeshUnderPointer = false; // Disable constant mesh updates
 
+    // Additional performance settings
+    scene.value.autoClear = false; // Don't auto-clear, we'll do it manually
+    scene.value.autoClearDepthAndStencil = false; // Performance boost
+
     // FPS Camera
     camera = new FreeCamera("camera", new Vector3(0, 1.8, 0), scene.value);
     camera.inputs.clear(); // Disable default inputs
     camera.rotation.y = Angle.FromDegrees(180).radians();
-    // Lighting - General ambient light for all rooms
+    // Lighting - General ambient light for all rooms (reduced intensity for performance)
     ambientLight = new HemisphericLight(
       "ambientLight",
       new Vector3(0, 1, 0), // General upward direction for even lighting
       scene.value,
     );
+    ambientLight.intensity = 0.6; // Reduced from default 1.0 for better performance
 
     // Physics (Cannon.js) - MOVED BEFORE CHILD COMPONENTS
     const gravity = new Vector3(0, -2, 0); // Reduced gravity

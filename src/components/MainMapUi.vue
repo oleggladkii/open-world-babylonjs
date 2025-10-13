@@ -27,9 +27,9 @@
           .control-row
             .control-input Left click + drag
             .control-action Rotate camera around target
-          //- .control-row
-          //-   .control-input Right click + drag
-          //-   .control-action Pan camera (move target)
+          .control-row
+            .control-input Right click + drag
+            .control-action Pan camera (move target)
           .control-row
             .control-input Mouse wheel
             .control-action Zoom in/out

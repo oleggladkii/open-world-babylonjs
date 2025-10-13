@@ -226,9 +226,9 @@ const throwApple = () => {
       appleMesh.value,
       PhysicsImpostor.SphereImpostor,
       {
-        mass: 0.2,
-        friction: 0.8,
-        restitution: 0.3,
+        mass: 0.22,
+        friction: 0.5,
+        restitution: 0.08,
         disableBidirectionalTransformation: false,
       },
       props.scene,
@@ -256,7 +256,7 @@ const throwApple = () => {
       camera,
     );
 
-    const throwForce = ray.direction.scale(3); // Throw strength
+    const throwForce = ray.direction.scale(5); // Throw strength
     throwForce.y += 0.5; // Add slight upward arc
 
     // Apply impulse for throwing
@@ -288,8 +288,12 @@ const throwApple = () => {
   }
 };
 
+let applesCount = 0;
 const respawnApple = () => {
-  if (!props.scene) return;
+  applesCount++;
+  if (!props.scene || applesCount >= 3) {
+    return;
+  }
 
   // If apple is currently held, retry in 1 second
   if (isHeld.value) {
