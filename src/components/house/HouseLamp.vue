@@ -68,12 +68,14 @@ const isPromptActive = computed(() => {
 // Lamp configurations
 const lampConfigs = [
   {
-    position: new Vector3(-1.3, 0, -6.5), // Near window, left side
-    rotation: new Vector3(0, Math.PI / 4, 0), // 45 degree rotation
+    position: new Vector3(-1.5, 0, -6.5),
+    lightPosition: new Vector3(-5, 3, -4),
+    rotation: new Vector3(0, Math.PI / 4, 0),
   },
   {
-    position: new Vector3(-1.3, 0, -1.5), // Near window, right side
-    rotation: new Vector3(0, -Math.PI / 4, 0), // -45 degree rotation
+    position: new Vector3(-1.5, 0, -1.5),
+    lightPosition: new Vector3(-5, 3, 4),
+    rotation: new Vector3(0, -Math.PI / 4, 0),
   },
 ];
 
@@ -277,7 +279,11 @@ const loadLamps = async () => {
         // Create point light for each lamp
         const lampLight = new PointLight(
           `lampLight_${i}`,
-          new Vector3(config.position.x, config.position.y, config.position.z),
+          new Vector3(
+            config.lightPosition.x,
+            config.lightPosition.y,
+            config.lightPosition.z,
+          ),
           props.scene,
         );
 
@@ -287,7 +293,15 @@ const loadLamps = async () => {
         lampLight.specular = new Color3(0.5, 0.5, 0.4); // Reduced specular for performance
         lampLight.range = 6; // Reduced light range for better performance
         lampLight.radius = 0.05; // Smaller radius for better performance
-
+        // Add a position gizmo for visualizing/adjusting lampLight positions (development only)
+        if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+          // Lazily load GizmoManager if available in the Babylon scene
+          // Note: This adds a visible, interactive position gizmo for lamp lights in the scene,
+          //       only during development for debugging.
+          if (props.scene.gizmoManager) {
+            props.scene.gizmoManager.attachToMesh(lampLight);
+          }
+        }
         lampLights.value.push(lampLight);
       }
     }

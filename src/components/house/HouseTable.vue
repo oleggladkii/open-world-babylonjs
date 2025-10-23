@@ -198,7 +198,7 @@ const addVideoToTV = () => {
     videoElement.muted = true; // Muted for autoplay
     videoElement.autoplay = true;
     videoElement.playsInline = true;
-    
+
     // Performance optimizations for video
     videoElement.width = 256; // Reduce video resolution for better performance
     videoElement.height = 144; // 16:9 ratio at lower quality
@@ -219,10 +219,10 @@ const addVideoToTV = () => {
     );
 
     videoTexture.value.uScale = -1;
-    
+
     // Performance: Update video texture less frequently
     videoTexture.value.updateSamplingMode(VideoTexture.BILINEAR_SAMPLINGMODE); // Lower quality = better FPS
-    
+
     // Create a rectangular plane for the TV screen
     screenPlane.value = MeshBuilder.CreatePlane(
       "tvScreen",

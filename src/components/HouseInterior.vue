@@ -26,6 +26,13 @@
       :is-active="isActive"
       @use-table="handleUseTable"
     )
+    BooksShelf(
+      v-if="scene"
+      :scene="scene"
+      :add-shadow-caster="addShadowCaster"
+      :player-position="playerPosition"
+      :is-active="isActive"
+    )
     HouseLamp(
       v-if="scene"
       :scene="scene"
@@ -51,11 +58,11 @@
       :scene="scene"
       :position="workDeskPosition"
     )
-    Bike(
-      v-if="scene"
-      :scene="scene"
-      :position="bikePosition"
-    )
+    //- Bike(
+    //-   v-if="scene"
+    //-   :scene="scene"
+    //-   :position="bikePosition"
+    //- )
     InteractionPrompt(
       text="Press E to exit"
       :trigger-position="exitPosition"
@@ -95,6 +102,7 @@ import HouseFloor from "./house/HouseFloor.vue";
 import HouseCeiling from "./house/HouseCeiling.vue";
 import HouseSofa from "./house/HouseSofa.vue";
 import HouseTable from "./house/HouseTable.vue";
+import BooksShelf from "./house/BooksShelf.vue";
 import HouseWindow from "./house/HouseWindow.vue";
 import HouseLamp from "./house/HouseLamp.vue";
 import HouseDoor from "./house/HouseDoor.vue";
