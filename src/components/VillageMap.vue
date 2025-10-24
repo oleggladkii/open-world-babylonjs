@@ -104,12 +104,13 @@ const sceneConfig = {
   enableFog: false,
   enablePhysics: false,
   enableAnimations: true,
-  shadowMapSize: 2048,
-  shadowBlurKernel: 32,
+  shadowMapSize: 512, // Reduced from 2048 for better performance
+  shadowBlurKernel: 8, // Reduced from 32 for better performance
   shadowDarkness: 0.3,
 };
 
-const { createScene, addShadowCaster, disposeScene } = useScene();
+const { createScene, addShadowCaster, setShadowQuality, disposeScene } =
+  useScene();
 const { createRoads } = useRoads();
 const {
   createPostProcessing: createPP,
@@ -352,6 +353,14 @@ watch(
   () => uiStore.graphicsQuality,
   (newQuality) => {
     setPostProcessingQuality(newQuality);
+  },
+);
+
+// Watch for shadow quality changes
+watch(
+  () => uiStore.shadowQuality,
+  (newQuality) => {
+    setShadowQuality(newQuality);
   },
 );
 

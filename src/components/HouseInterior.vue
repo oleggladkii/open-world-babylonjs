@@ -8,20 +8,16 @@
       v-if="scene"
       :scene="scene"
       :position="windowPosition"
-      :add-shadow-caster="addShadowCaster"
     )
     HouseSofa(
       v-if="scene"
       :scene="scene"
-      :add-shadow-caster="addShadowCaster"
       :player-position="playerPosition"
       :is-active="isActive"
-      @sit-down="handleSitDown"
     )
     HouseTable(
       v-if="scene"
       :scene="scene"
-      :add-shadow-caster="addShadowCaster"
       :player-position="playerPosition"
       :is-active="isActive"
       @use-table="handleUseTable"
@@ -29,7 +25,6 @@
     BooksShelf(
       v-if="scene"
       :scene="scene"
-      :add-shadow-caster="addShadowCaster"
       :player-position="playerPosition"
       :is-active="isActive"
     )
@@ -58,11 +53,21 @@
       :scene="scene"
       :position="workDeskPosition"
     )
-    //- Bike(
-    //-   v-if="scene"
-    //-   :scene="scene"
-    //-   :position="bikePosition"
-    //- )
+    GarageBox(
+      v-if="scene"
+      :scene="scene"
+      :position="garageBox1Position"
+    )
+    GarageBox(
+      v-if="scene"
+      :scene="scene"
+      :position="garageBox2Position"
+    )
+    GarageBox(
+      v-if="scene"
+      :scene="scene"
+      :position="garageBox3Position"
+    )
     InteractionPrompt(
       text="Press E to exit"
       :trigger-position="exitPosition"
@@ -108,7 +113,7 @@ import HouseLamp from "./house/HouseLamp.vue";
 import HouseDoor from "./house/HouseDoor.vue";
 import GarageGate from "./house/GarageGate.vue";
 import WorkDesk from "./house/WorkDesk.vue";
-import Bike from "./house/Bike.vue";
+import GarageBox from "./house/GarageBox.vue";
 
 interface Props {
   isActive: boolean;
@@ -129,7 +134,9 @@ const windowPosition = new Vector3(-5, 3, -10);
 const doorPosition = new Vector3(-5, 0, 9.8);
 const garageGatePosition = new Vector3(5, 3, 9.7);
 const workDeskPosition = new Vector3(2.5, 0, -3.7);
-const bikePosition = new Vector3(1, 0.6, 5);
+const garageBox2Position = new Vector3(8, 0, 2);
+const garageBox1Position = new Vector3(7.5, 0, 0);
+const garageBox3Position = new Vector3(9, 0, 4);
 const scene = ref<Scene | null>(null);
 
 // Store references for cleanup
@@ -346,18 +353,26 @@ const initHouseInterior = async () => {
         stuckCounter++;
         if (stuckCounter > maxStuckFrames) {
           // Player is stuck, push them away from walls
-          const pushForce = new Vector3(
-            Math.random() - 0.5,
-            0,
-            Math.random() - 0.5,
-          )
-            .normalize()
-            .scale(2);
+          // Use more intelligent push direction based on player position
+          const pushDirection = new Vector3();
+          const currentPlayerPos = player.getAbsolutePosition();
+          if (currentPlayerPos.x < -0.5) {
+            // In room 1, push towards center
+            pushDirection.x = 1;
+          } else if (currentPlayerPos.x > 0.5) {
+            // In room 2, push towards center
+            pushDirection.x = -1;
+          } else {
+            // In doorway, push towards center of doorway
+            pushDirection.z = currentPlayerPos.z > 0 ? -1 : 1;
+          }
+
+          const pushForce = pushDirection.normalize().scale(3);
           if (player.physicsImpostor) {
             player.physicsImpostor.setLinearVelocity(pushForce);
           }
           stuckCounter = 0;
-          console.log("Player unstuck applied");
+          console.log("Player unstuck applied with intelligent direction");
         }
       } else {
         stuckCounter = 0;
@@ -407,21 +422,21 @@ const initHouseInterior = async () => {
       let roomBounds;
 
       // Determine which room the player is in and set appropriate boundaries
-      // Updated bounds to match NEW wall positions
-      if (playerPos.x < -0.5) {
+      // Updated bounds to match NEW wall positions with smoother transitions
+      if (playerPos.x < -1.0) {
         // Player is in the first room (10x20) - unchanged
         roomBounds = {
           minX: -9.5, // Blue wall at x=-10 + margin
-          maxX: -0.5, // Yellow walls at x=0 - margin
+          maxX: -1.0, // Yellow walls at x=0 - margin
           minZ: -9.5, // Red wall at z=-10 + margin
           maxZ: 9.5, // Green wall at z=10 - margin
           minY: 0.5,
           maxY: 4.5,
         };
-      } else if (playerPos.x > 0.5) {
+      } else if (playerPos.x > 1.0) {
         // Player is in the second room (10x10) - UPDATED to smaller room!
         roomBounds = {
-          minX: 0.5, // Gray walls at x=0.25 + margin
+          minX: 1.0, // Gray walls at x=0.25 + margin
           maxX: 9.5, // Gray wall at x=10 - margin
           minZ: -4.5, // Gray wall at z=-5 + margin
           maxZ: 9.5, // Gray wall at z=10 - margin
@@ -456,18 +471,18 @@ const initHouseInterior = async () => {
       let finalY = targetCameraPos.y;
       let finalZ = targetCameraPos.z;
 
-      if (playerPos.x < -0.5) {
+      if (playerPos.x < -1.0) {
         // First room - very strict bounds (walls at x=-10, x=0, z=-10, z=10)
         finalX = Math.max(-8.0, Math.min(-2.0, finalX)); // 2.0 unit margin from walls
         finalZ = Math.max(-8.0, Math.min(8.0, finalZ)); // 2.0 unit margin from walls
-      } else if (playerPos.x > 0.5) {
+      } else if (playerPos.x > 1.0) {
         // Second room - UPDATED bounds (walls at x=0.25, x=10, z=-5, z=10)
         finalX = Math.max(2.0, Math.min(8.0, finalX)); // 2.0 unit margin from walls
         finalZ = Math.max(-3.0, Math.min(8.0, finalZ)); // Updated: north wall at z=-5, south at z=10
       } else {
-        // Doorway - extremely restricted (only in doorway area)
+        // Doorway - match physics boundaries (z=-2.75 to z=2.75)
         finalX = Math.max(-8.0, Math.min(8.0, finalX));
-        finalZ = Math.max(-1.0, Math.min(1.0, finalZ)); // Very tight doorway
+        finalZ = Math.max(-2.0, Math.min(2.0, finalZ)); // Match doorway physics bounds
       }
 
       // Height bounds - keep camera well within room
@@ -523,30 +538,6 @@ const initHouseInterior = async () => {
 const handleExit = () => {
   if (props.onExit) {
     props.onExit();
-  }
-};
-
-const handleSitDown = (sittingPosition: Vector3) => {
-  if (player && camera) {
-    // Move player to sitting position
-    player.position.copyFrom(sittingPosition);
-
-    // Update camera to sitting position
-    camera.position.copyFrom(sittingPosition);
-    camera.position.y += 0.5; // Camera slightly above sitting position
-
-    // Reset physics body position if available
-    if (player.physicsImpostor && player.physicsImpostor.physicsBody) {
-      player.physicsImpostor.physicsBody.position.set(
-        sittingPosition.x,
-        sittingPosition.y,
-        sittingPosition.z,
-      );
-      // Stop any movement
-      player.physicsImpostor.setLinearVelocity(Vector3.Zero());
-    }
-
-    console.log("Player is now sitting on the sofa");
   }
 };
 

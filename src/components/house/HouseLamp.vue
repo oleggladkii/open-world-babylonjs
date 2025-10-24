@@ -161,7 +161,7 @@ const createWallSwitch = () => {
   // Set initial material state
   updateSwitchMaterial();
 
-  // Shadows disabled for performance
+  // Shadows disabled for performance - switch is not critical for shadow casting
   // props.addShadowCaster(switchToggle);
 
   return { switchToggle, switchMaterial };
@@ -225,7 +225,7 @@ const createCeilingLamps = () => {
   // Create one central ceiling light above carpet
   const centralCeilingLight = new PointLight(
     "centralCeilingLight",
-    new Vector3(-5, 2, -4), // Center of carpet position
+    new Vector3(0, 0, 0), // Center of carpet position
     props.scene,
   );
 

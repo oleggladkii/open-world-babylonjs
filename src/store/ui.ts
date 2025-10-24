@@ -2,6 +2,8 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import type { PostProcessingQuality } from "@/composables/usePostProcessing";
 
+export type ShadowQuality = "low" | "medium" | "high";
+
 export const useUiStore = defineStore(
   "ui",
   () => {
@@ -11,6 +13,7 @@ export const useUiStore = defineStore(
     const isLoading = ref(true);
     const hasInteractedWithCharacter = ref(false);
     const graphicsQuality = ref<PostProcessingQuality>("medium");
+    const shadowQuality = ref<ShadowQuality>("low"); // Default to low for better performance
 
     const setMusicVolume = (value: number) => {
       musicVolume.value = Math.max(0, Math.min(100, value));
@@ -25,6 +28,8 @@ export const useUiStore = defineStore(
       (hasInteractedWithCharacter.value = value);
     const setGraphicsQuality = (quality: PostProcessingQuality) =>
       (graphicsQuality.value = quality);
+    const setShadowQuality = (quality: ShadowQuality) =>
+      (shadowQuality.value = quality);
 
     return {
       // State
@@ -34,6 +39,7 @@ export const useUiStore = defineStore(
       isLoading,
       hasInteractedWithCharacter,
       graphicsQuality,
+      shadowQuality,
       // Actions
       setMusicVolume,
       toggleMusicMute,
@@ -42,11 +48,12 @@ export const useUiStore = defineStore(
       setLoading,
       setCharacterInteraction,
       setGraphicsQuality,
+      setShadowQuality,
     };
   },
   {
     persist: {
-      paths: ["musicVolume", "isMusicMuted", "graphicsQuality"],
+      paths: ["musicVolume", "isMusicMuted", "graphicsQuality", "shadowQuality"],
     },
   },
 );

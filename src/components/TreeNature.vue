@@ -88,8 +88,8 @@ const createTrees = async () => {
               instance.rotation = treeRotations[index].clone();
               instance.scaling = treeScales[index].clone();
 
-              // Enable shadow casting and receiving
-              props.addShadowCaster(instance);
+              // Enable shadow receiving only for performance - trees don't need to cast shadows
+              // props.addShadowCaster(instance);
               instance.receiveShadows = true;
 
               treeInstances.push(instance);

@@ -13,17 +13,17 @@ import {
   PhysicsImpostor,
   StandardMaterial,
   Color3,
+  Texture,
 } from "@babylonjs/core";
+import roomWoodTextureUrl from "../../assets/textures/room-wood-01.jpg";
 
 interface Props {
   scene: Scene | null;
-  addShadowCaster?: (mesh: Mesh) => void;
   playerPosition?: Vector3 | null;
   isActive?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  addShadowCaster: undefined,
   playerPosition: null,
   isActive: false,
 });
@@ -39,14 +39,20 @@ const createBookshelf = () => {
   }
 
   try {
-    // Create wood material for bookshelf
+    // Create wood material for bookshelf with texture
     const woodMaterial = new StandardMaterial("bookshelfMaterial", props.scene);
-    woodMaterial.diffuseColor = new Color3(0.6, 0.4, 0.2); // Brown wood color
+    const woodTexture = new Texture(roomWoodTextureUrl, props.scene);
+
+    // Configure texture tiling for bookshelf
+    woodTexture.uScale = 4; // Repeat texture horizontally
+    woodTexture.vScale = 4; // Repeat texture vertically
+
+    woodMaterial.diffuseTexture = woodTexture;
     woodMaterial.specularColor = new Color3(0.1, 0.1, 0.1); // Low specular for matte finish
     woodMaterial.zOffset = -1; // Prevent z-fighting
 
     // Bookshelf dimensions
-    const bookshelfWidth = 6;
+    const bookshelfWidth = 4;
     const bookshelfHeight = 5;
     const bookshelfDepth = 0.9;
     const sideThickness = 0.05;
@@ -61,7 +67,7 @@ const createBookshelf = () => {
       },
       props.scene,
     );
-    leftSide.position.set(-4.6, 1, 0);
+    leftSide.position.set(-4.6, 1, 1);
     leftSide.rotation.y = Math.PI / 2;
     leftSide.material = woodMaterial;
 
@@ -74,7 +80,7 @@ const createBookshelf = () => {
       },
       props.scene,
     );
-    rightSide.position.set(-4.6, 1, 6);
+    rightSide.position.set(-4.6, 1, 5);
     rightSide.rotation.y = Math.PI / 2;
     rightSide.material = woodMaterial;
 
@@ -88,7 +94,7 @@ const createBookshelf = () => {
       },
       props.scene,
     );
-    backPanel.position.set(-4.9, 1, 3);
+    backPanel.position.set(-5, 1, 3);
     backPanel.rotation.y = Math.PI / 2;
     backPanel.material = woodMaterial;
 
@@ -112,6 +118,55 @@ const createBookshelf = () => {
       shelf.rotation.y = Math.PI / 2;
       shelf.material = woodMaterial;
       shelves.push(shelf);
+
+      // 🟦 Create books only on 4 shelves (skip top shelf)
+      if (i > 0) {
+        for (let j = 0; j < 6; j++) {
+          const bookWidth = 0.1 + Math.random() * 0.05;
+          const bookHeight = 0.6 + Math.random() * 0.2;
+          const bookDepth = 0.35 + Math.random() * 0.4;
+
+          const book = MeshBuilder.CreateBox(
+            `book_${i}_${j}`,
+            { width: bookWidth, height: bookHeight, depth: bookDepth },
+            props.scene,
+          );
+
+          const bookMaterial = new StandardMaterial(
+            `bookMat_${i}_${j}`,
+            props.scene,
+          );
+          const bookColors = [
+            new Color3(0.55, 0.27, 0.07), // brown leather
+            new Color3(0.33, 0.42, 0.18), // olive green
+            new Color3(0.2, 0.2, 0.25), // dark gray
+            new Color3(0.5, 0.0, 0.0), // dark red
+            new Color3(0.15, 0.25, 0.45), // navy blue
+            new Color3(0.6, 0.45, 0.3), // tan / beige
+            new Color3(0.25, 0.15, 0.05), // dark brown
+            new Color3(0.4, 0.1, 0.1), // reddish brown
+            new Color3(0.25, 0.3, 0.15), // army green
+            new Color3(0.65, 0.55, 0.4), // parchment / light brown
+          ];
+          const color =
+            bookColors[Math.floor(Math.random() * bookColors.length)];
+          bookMaterial.diffuseColor = color;
+
+          book.material = bookMaterial;
+
+          // Position books on the shelf
+          // Bookshelf spans from Z=0 to Z=6, with shelves at Z=3
+          const bookSpacing = 0.2 + Math.random() * 0.3; // Random spacing between 0.1 - 0.5
+          const startZ = 4.2; // Start from left side of bookshelf
+
+          book.position.set(
+            -9.2, // Same X as shelf
+            shelfY + 0.2 + shelfThickness / 2 + bookHeight / 2, // On top of shelf
+            startZ + j * bookSpacing, // Along the shelf
+          );
+          book.rotation.y = Math.PI / 2;
+        }
+      }
     }
 
     const allBookshelfParts = [leftSide, rightSide, backPanel, ...shelves];
@@ -139,12 +194,6 @@ const createBookshelf = () => {
         { mass: 0, friction: 0.8, restitution: 0 },
         props.scene,
       );
-
-      // Shadows disabled for performance
-      // mergedBookshelf.receiveShadows = true;
-      // if (props.addShadowCaster) {
-      //   props.addShadowCaster(mergedBookshelf);
-      // }
 
       isLoaded.value = true;
       console.log("Bookshelf created successfully");

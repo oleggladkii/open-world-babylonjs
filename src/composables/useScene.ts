@@ -4,17 +4,14 @@ import {
   Vector3,
   Color3,
   Color4,
-  UniversalCamera,
-  ArcRotateCamera,
   HemisphericLight,
   DirectionalLight,
   ShadowGenerator,
-  CascadedShadowGenerator,
+  Mesh,
 } from "@babylonjs/core";
 
 // FogMode constants
 const FOGMODE_NONE = 0;
-const FOGMODE_EXP = 1;
 const FOGMODE_EXP2 = 2;
 const FOGMODE_LINEAR = 3;
 
@@ -63,7 +60,7 @@ export const useScene = () => {
     setupSceneProperties(scene, config);
 
     // Setup lighting
-    setupLighting(scene, config);
+    setupLighting(scene);
 
     // Setup shadows if enabled
     if (config.enableShadows !== false) {
@@ -109,7 +106,7 @@ export const useScene = () => {
     }
   };
 
-  const setupLighting = (scene: Scene, config: SceneConfig) => {
+  const setupLighting = (scene: Scene) => {
     // Create hemispheric light for ambient lighting
     const hemisphericLight = new HemisphericLight(
       "hemisphericLight",
@@ -137,9 +134,9 @@ export const useScene = () => {
       "directionalLight",
     ) as DirectionalLight;
     if (directionalLight) {
-      // Use CascadedShadowGenerator for better quality
-      shadowGenerator = new CascadedShadowGenerator(
-        config.shadowMapSize || 2048,
+      // Use regular ShadowGenerator for better performance on integrated GPUs
+      shadowGenerator = new ShadowGenerator(
+        config.shadowMapSize || 512, // Reduced from 2048 for better performance
         directionalLight,
       );
 
@@ -147,13 +144,31 @@ export const useScene = () => {
       shadowGenerator.setDarkness(config.shadowDarkness || 0.3);
 
       if (config.shadowBlurKernel) {
-        // shadowGenerator.useBlurExponentialShadowMap = true;
         shadowGenerator.blurKernel = config.shadowBlurKernel;
       }
 
-      // Enable soft shadows
+      // Use configurable quality filtering for better performance
       shadowGenerator.usePercentageCloserFiltering = true;
-      shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_HIGH;
+      shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_MEDIUM; // Changed from HIGH to MEDIUM
+    }
+  };
+
+  const setShadowQuality = (quality: "low" | "medium" | "high") => {
+    if (!shadowGenerator) return;
+
+    switch (quality) {
+      case "low":
+        shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_LOW;
+        shadowGenerator.blurKernel = 4;
+        break;
+      case "medium":
+        shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
+        shadowGenerator.blurKernel = 8;
+        break;
+      case "high":
+        shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_HIGH;
+        shadowGenerator.blurKernel = 16;
+        break;
     }
   };
 
@@ -225,13 +240,13 @@ export const useScene = () => {
     }
   };
 
-  const addShadowCaster = (mesh: any) => {
+  const addShadowCaster = (mesh: Mesh) => {
     if (shadowGenerator && mesh) {
       shadowGenerator.addShadowCaster(mesh, true);
     }
   };
 
-  const addShadowReceiver = (mesh: any) => {
+  const addShadowReceiver = (mesh: Mesh) => {
     if (mesh) {
       mesh.receiveShadows = true;
     }
@@ -263,6 +278,7 @@ export const useScene = () => {
     addShadowReceiver,
     getScene,
     getShadowGenerator,
+    setShadowQuality,
     disposeScene,
   };
 };

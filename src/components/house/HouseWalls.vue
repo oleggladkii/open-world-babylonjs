@@ -16,6 +16,7 @@ import {
   Angle,
 } from "@babylonjs/core";
 import bricksTextureUrl from "../../assets/textures/bricks.jpg";
+import roomWoodTextureUrl from "../../assets/textures/room-wood-01.jpg";
 
 interface Props {
   scene: Scene | null;
@@ -112,9 +113,28 @@ const createWallGeometries = (): Mesh[] => {
   const grayMaterial = new StandardMaterial("grayMat", props.scene);
   grayMaterial.diffuseColor = new Color3(180 / 255, 180 / 255, 180 / 255);
 
-  // Material for doorway arch (brown)
+  // Material for doorway arch (wood texture)
   const archMaterial = new StandardMaterial("archMat", props.scene);
-  archMaterial.diffuseColor = new Color3(101 / 255, 67 / 255, 33 / 255); // Brown color rgba(101, 67, 33, 1)
+  const archTexture = new Texture(roomWoodTextureUrl, props.scene);
+
+  // Configure texture tiling for arch
+  archTexture.uScale = 1; // Repeat texture horizontally
+  archTexture.vScale = 1; // Repeat texture vertically
+
+  archMaterial.diffuseTexture = archTexture;
+  archMaterial.specularColor = new Color3(0.1, 0.1, 0.1); // Low specular for wood
+
+  // Material for arch beam with higher z-index
+  const archBeamMaterial = new StandardMaterial("archBeamMat", props.scene);
+  const archBeamTexture = new Texture(roomWoodTextureUrl, props.scene);
+
+  // Configure texture tiling for arch beam
+  archBeamTexture.uScale = 1; // Repeat texture horizontally
+  archBeamTexture.vScale = 1; // Repeat texture vertically
+
+  archBeamMaterial.diffuseTexture = archBeamTexture;
+  archBeamMaterial.specularColor = new Color3(0.1, 0.1, 0.1); // Low specular for wood
+  archBeamMaterial.zOffset = 2; // Higher z-index for beam
 
   // ====== Room 1 Walls (10x20) - Light Gray rgba(210, 215, 220, 1) ======
   // North wall (Light Gray) - with window opening
@@ -504,7 +524,7 @@ const createWallGeometries = (): Mesh[] => {
     props.scene,
   );
   archBeam.position.set(0.15, 5.25, 1.4); // Above the doorway
-  archBeam.material = archMaterial;
+  archBeam.material = archBeamMaterial;
   walls.push(archBeam);
   return walls;
 };

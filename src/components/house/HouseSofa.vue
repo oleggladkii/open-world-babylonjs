@@ -1,16 +1,6 @@
 <template lang="pug">
 div
   // Invisible component - sofa is created programmatically
-  //- InteractionPrompt(
-  //-   v-if="sofaMesh && isLoaded"
-  //-   text="Press F to sit down"
-  //-   :trigger-position="interactionPosition"
-  //-   :trigger-radius="3"
-  //-   :player-position="playerPosition"
-  //-   :is-active="isActive"
-  //-   key-binding="F"
-  //-   @interact="handleSitDown"
-  //- )
 </template>
 
 <script setup lang="ts">
@@ -29,7 +19,6 @@ import {
 
 interface Props {
   scene: Scene | null;
-  addShadowCaster?: (mesh: Mesh) => void;
   playerPosition?: Vector3 | null;
   isActive?: boolean;
 }
@@ -37,12 +26,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   playerPosition: null,
   isActive: true,
-  addShadowCaster: undefined,
 });
-
-const emit = defineEmits<{
-  sitDown: [position: Vector3];
-}>();
 
 // Refs
 const sofaMesh = ref<Mesh | null>(null);
@@ -113,17 +97,6 @@ const loadSofa = async () => {
         props.scene,
       );
 
-      // Enable shadow casting and receiving for all meshes
-      result.meshes.forEach((mesh) => {
-        if (mesh instanceof Mesh) {
-          // Shadows disabled for performance
-          // mesh.receiveShadows = true;
-          // if (props.addShadowCaster) {
-          //   props.addShadowCaster(mesh);
-          // }
-        }
-      });
-
       // Update interaction position to be in front of the sofa (90° rotation means front is to the east)
       interactionPosition.value = new Vector3(-5, 0.5, -7); // In front of sofa (east side after 90° rotation)
 
@@ -134,18 +107,6 @@ const loadSofa = async () => {
     }
   } catch (error) {
     console.error("Error loading sofa model:", error);
-  }
-};
-
-const handleSitDown = () => {
-  if (sofaMesh.value) {
-    // Calculate sitting position on the sofa
-    const sittingPosition = sofaMesh.value.position.clone();
-    sittingPosition.y += 0.8; // Sit on top of sofa
-    sittingPosition.z += 0.5; // Slightly forward on the sofa
-
-    emit("sitDown", sittingPosition);
-    console.log("Player sitting on sofa at position:", sittingPosition);
   }
 };
 
@@ -187,7 +148,3 @@ defineExpose({
   cleanup,
 });
 </script>
-
-<style scoped>
-/* No visual styling needed - sofa is a 3D object */
-</style>

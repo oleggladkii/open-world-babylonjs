@@ -46,10 +46,11 @@ const createWalkingCharacters = async () => {
     });
 
     if (femaleResult && femaleResult.meshes.length > 0) {
-      // Setup shadows for all meshes
+      // Setup shadows for all meshes - only receive shadows, don't cast for performance
       femaleResult.meshes.forEach((mesh) => {
         mesh.receiveShadows = true;
-        props.addShadowCaster(mesh);
+        // Disabled shadow casting for characters to improve performance
+        // props.addShadowCaster(mesh);
       });
 
       // Start walk animation if available
@@ -133,10 +134,11 @@ const createWalkingCharacters = async () => {
 
     // Setup male character with phone
     if (maleResult && maleResult.meshes.length > 0) {
-      // Setup shadows for all meshes
+      // Setup shadows for all meshes - only receive shadows, don't cast for performance
       maleResult.meshes.forEach((mesh) => {
         mesh.receiveShadows = true;
-        props.addShadowCaster(mesh);
+        // Disabled shadow casting for characters to improve performance
+        // props.addShadowCaster(mesh);
       });
 
       // Start walk animation if available

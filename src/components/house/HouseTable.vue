@@ -21,7 +21,7 @@ div
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import {
   Scene,
   Vector3,
@@ -39,13 +39,11 @@ import HouseApple from "./HouseApple.vue";
 
 interface Props {
   scene: Scene | null;
-  addShadowCaster?: (mesh: Mesh) => void;
   playerPosition?: Vector3 | null;
   isActive?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  addShadowCaster: undefined,
   playerPosition: null,
   isActive: false,
 });
@@ -57,14 +55,168 @@ const emit = defineEmits<{
 // Performance: Disable video for better FPS (set to false to improve performance)
 const ENABLE_TV_VIDEO = true; // Set to false to disable video and improve FPS significantly
 
+// Table configuration - memoized
+const TABLE_CONFIG = computed(() => ({
+  position: new Vector3(-4.5, 0, -2.25),
+  dimensions: {
+    height: 0.75,
+    topWidth: 1.2,
+    topDepth: 2,
+    topThickness: 0.1,
+    legWidth: 0.1,
+  },
+  television: {
+    position: new Vector3(-9.2, 0.91, -4.4),
+    rotation: new Vector3(0, Math.PI / 2, 0),
+    scaling: new Vector3(0.2, 0.2, 0.2),
+  },
+  screen: {
+    position: new Vector3(-9.1, 1.69, -4.48),
+    width: 1.825,
+    height: 1.14,
+  },
+  video: {
+    width: 256,
+    height: 144,
+    src: "/assets/videos/tv-placeholder.mp4",
+  },
+}));
+
+// Material cache to prevent memory leaks
+const materialCache = ref<{
+  brown: StandardMaterial | null;
+  glass: StandardMaterial | null;
+  screen: StandardMaterial | null;
+}>({
+  brown: null,
+  glass: null,
+  screen: null,
+});
+
+// Video cache
+const videoCache = ref<{
+  element: HTMLVideoElement | null;
+  texture: VideoTexture | null;
+}>({
+  element: null,
+  texture: null,
+});
+
 // Refs
 const tableMesh = ref<Mesh | null>(null);
 const televisionMesh = ref<Mesh | null>(null);
 const screenPlane = ref<Mesh | null>(null);
-const videoTexture = ref<VideoTexture | null>(null);
 const isLoaded = ref(false);
 const interactionPosition = ref(new Vector3(-4.5, 0.5, -2.25)); // Position in front of table
 const { loadModel } = useLoadModel();
+
+// Create and cache materials
+const createMaterials = (): {
+  brown: StandardMaterial;
+  glass: StandardMaterial;
+} => {
+  if (!props.scene) throw new Error("Scene not available");
+
+  // Return cached materials if they exist
+  if (materialCache.value.brown && materialCache.value.glass) {
+    return {
+      brown: materialCache.value.brown as StandardMaterial,
+      glass: materialCache.value.glass as StandardMaterial,
+    };
+  }
+
+  // Create brown material for table legs (wood-like)
+  const brownMaterial = new StandardMaterial("tableLegMaterial", props.scene);
+  brownMaterial.diffuseColor = new Color3(0.6, 0.4, 0.2); // Brown wood color
+  brownMaterial.specularColor = new Color3(0.1, 0.1, 0.1); // Low specular for matte finish
+  brownMaterial.zOffset = -1; // Prevent z-fighting with floor
+
+  // Create transparent glass material for table top
+  const glassMaterial = new StandardMaterial("tableTopMaterial", props.scene);
+  glassMaterial.diffuseColor = new Color3(0.9, 0.9, 1.0); // Slight blue tint
+  glassMaterial.specularColor = new Color3(1.0, 1.0, 1.0); // High specular for glass
+  glassMaterial.alpha = 0.3; // Transparent
+  glassMaterial.backFaceCulling = false; // Show both sides
+  glassMaterial.zOffset = 1; // Render glass on top
+
+  // Cache materials
+  materialCache.value = {
+    brown: brownMaterial,
+    glass: glassMaterial,
+    screen: materialCache.value.screen, // Keep existing screen material
+  };
+
+  return { brown: brownMaterial, glass: glassMaterial };
+};
+
+// Create table top
+const createTableTop = (materials: { glass: StandardMaterial }): Mesh => {
+  const config = TABLE_CONFIG.value;
+  
+  const tableTop = MeshBuilder.CreateBox(
+    "tableTop",
+    {
+      width: config.dimensions.topWidth,
+      height: config.dimensions.topThickness,
+      depth: config.dimensions.topDepth,
+    },
+    props.scene!,
+  );
+  tableTop.position.set(
+    config.position.x,
+    config.dimensions.height - config.dimensions.topThickness / 2,
+    config.position.z,
+  );
+  tableTop.material = materials.glass;
+
+  return tableTop;
+};
+
+// Create table legs
+const createTableLegs = (materials: { brown: StandardMaterial }): Mesh[] => {
+  const config = TABLE_CONFIG.value;
+  const legs: Mesh[] = [];
+
+  const legPositions = [
+    {
+      x: -config.dimensions.topWidth / 2 + config.dimensions.legWidth / 2,
+      z: -config.dimensions.topDepth / 2 + config.dimensions.legWidth / 2,
+    }, // Front left
+    {
+      x: config.dimensions.topWidth / 2 - config.dimensions.legWidth / 2,
+      z: -config.dimensions.topDepth / 2 + config.dimensions.legWidth / 2,
+    }, // Front right
+    {
+      x: -config.dimensions.topWidth / 2 + config.dimensions.legWidth / 2,
+      z: config.dimensions.topDepth / 2 - config.dimensions.legWidth / 2,
+    }, // Back left
+    {
+      x: config.dimensions.topWidth / 2 - config.dimensions.legWidth / 2,
+      z: config.dimensions.topDepth / 2 - config.dimensions.legWidth / 2,
+    }, // Back right
+  ];
+
+  legPositions.forEach((pos, index) => {
+    const leg = MeshBuilder.CreateBox(
+      `tableLeg${index + 1}`,
+      {
+        width: config.dimensions.legWidth,
+        height: 1,
+        depth: config.dimensions.legWidth,
+      },
+      props.scene!,
+    );
+    leg.position.set(
+      config.position.x + pos.x,
+      0.25,
+      config.position.z + pos.z,
+    );
+    leg.material = materials.brown;
+    legs.push(leg);
+  });
+
+  return legs;
+};
 
 const createTable = () => {
   if (!props.scene) {
@@ -73,76 +225,12 @@ const createTable = () => {
   }
 
   try {
-    // Create brown material for table legs (wood-like)
-    const brownMaterial = new StandardMaterial("tableLegMaterial", props.scene);
-    brownMaterial.diffuseColor = new Color3(0.6, 0.4, 0.2); // Brown wood color
-    brownMaterial.specularColor = new Color3(0.1, 0.1, 0.1); // Low specular for matte finish
-    brownMaterial.zOffset = -1; // Prevent z-fighting with floor
+    // Create and cache materials
+    const materials = createMaterials();
 
-    // Create transparent glass material for table top
-    const glassMaterial = new StandardMaterial("tableTopMaterial", props.scene);
-    glassMaterial.diffuseColor = new Color3(0.9, 0.9, 1.0); // Slight blue tint
-    glassMaterial.specularColor = new Color3(1.0, 1.0, 1.0); // High specular for glass
-    glassMaterial.alpha = 0.3; // Transparent
-    glassMaterial.backFaceCulling = false; // Show both sides
-    glassMaterial.zOffset = 1; // Render glass on top
-
-    // Table dimensions
-    const tableHeight = 0.75; // Зменшуємо висоту столу
-    const tableTopWidth = 1.2;
-    const tableTopDepth = 2;
-    const tableTopThickness = 0.1;
-    const legWidth = 0.1;
-    const legHeight = tableHeight - tableTopThickness;
-
-    // Create table top
-    const tableTop = MeshBuilder.CreateBox(
-      "tableTop",
-      {
-        width: tableTopWidth,
-        height: tableTopThickness,
-        depth: tableTopDepth,
-      },
-      props.scene,
-    );
-    tableTop.position.set(-4.5, tableHeight - tableTopThickness / 2, -2.25);
-    tableTop.material = glassMaterial;
-
-    // Create 4 legs
-    const legPositions = [
-      {
-        x: -tableTopWidth / 2 + legWidth / 2,
-        z: -tableTopDepth / 2 + legWidth / 2,
-      }, // Front left
-      {
-        x: tableTopWidth / 2 - legWidth / 2,
-        z: -tableTopDepth / 2 + legWidth / 2,
-      }, // Front right
-      {
-        x: -tableTopWidth / 2 + legWidth / 2,
-        z: tableTopDepth / 2 - legWidth / 2,
-      }, // Back left
-      {
-        x: tableTopWidth / 2 - legWidth / 2,
-        z: tableTopDepth / 2 - legWidth / 2,
-      }, // Back right
-    ];
-
-    const legs: Mesh[] = [];
-    legPositions.forEach((pos, index) => {
-      const leg = MeshBuilder.CreateBox(
-        `tableLeg${index + 1}`,
-        {
-          width: legWidth,
-          height: 1,
-          depth: legWidth,
-        },
-        props.scene!,
-      );
-      leg.position.set(-4.5 + pos.x, 0.25, -2.25 + pos.z);
-      leg.material = brownMaterial;
-      legs.push(leg);
-    });
+    // Create table parts
+    const tableTop = createTableTop(materials);
+    const legs = createTableLegs(materials);
 
     // Merge all table parts into one mesh
     const allTableParts = [tableTop, ...legs];
@@ -167,12 +255,6 @@ const createTable = () => {
         props.scene,
       );
 
-      // Shadows disabled for performance
-      // mergedTable.receiveShadows = true;
-      // if (props.addShadowCaster) {
-      //   props.addShadowCaster(mergedTable);
-      // }
-
       isLoaded.value = true;
       console.log("Red table created successfully");
 
@@ -184,6 +266,109 @@ const createTable = () => {
   }
 };
 
+// Create and cache video resources
+const createVideoResources = (): {
+  element: HTMLVideoElement;
+  texture: VideoTexture;
+} => {
+  if (!props.scene) throw new Error("Scene not available");
+
+  // Return cached resources if they exist
+  if (videoCache.value.element && videoCache.value.texture) {
+    return {
+      element: videoCache.value.element,
+      texture: videoCache.value.texture as VideoTexture,
+    };
+  }
+
+  const config = TABLE_CONFIG.value;
+
+  // Create video element with performance optimizations
+  const videoElement = document.createElement("video");
+  videoElement.src = config.video.src;
+  videoElement.loop = true;
+  videoElement.muted = true; // Muted for autoplay
+  videoElement.autoplay = true;
+  videoElement.playsInline = true;
+
+  // Performance optimizations for video
+  videoElement.width = config.video.width;
+  videoElement.height = config.video.height;
+  videoElement.playbackRate = 1.0; // Normal speed
+
+  // Create video texture with performance settings
+  const videoTexture = new VideoTexture(
+    "tvVideoTexture",
+    videoElement,
+    props.scene,
+    false, // Not inverted
+    false, // Not mirrored
+    VideoTexture.TRILINEAR_SAMPLINGMODE, // Better quality filtering
+    {
+      autoPlay: true,
+      autoUpdateTexture: true,
+    },
+  );
+
+  videoTexture.uScale = -1;
+
+  // Performance: Update video texture less frequently
+  videoTexture.updateSamplingMode(VideoTexture.BILINEAR_SAMPLINGMODE); // Lower quality = better FPS
+
+  // Cache resources
+  videoCache.value = {
+    element: videoElement,
+    texture: videoTexture,
+  };
+
+  return { element: videoElement, texture: videoTexture };
+};
+
+// Create screen material
+const createScreenMaterial = (videoTexture: VideoTexture): StandardMaterial => {
+  if (!props.scene) throw new Error("Scene not available");
+
+  // Return cached material if it exists
+  if (materialCache.value.screen) {
+    return materialCache.value.screen as StandardMaterial;
+  }
+
+  const screenMaterial = new StandardMaterial("tvScreenMaterial", props.scene);
+  screenMaterial.diffuseTexture = videoTexture;
+  screenMaterial.emissiveTexture = videoTexture; // Make it glow
+  screenMaterial.emissiveColor = new Color3(0.8, 0.8, 0.8); // Bright emission
+  screenMaterial.backFaceCulling = false; // Show both sides
+
+  // Cache material
+  materialCache.value.screen = screenMaterial;
+
+  return screenMaterial;
+};
+
+// Create screen plane
+const createScreenPlane = (): Mesh => {
+  const config = TABLE_CONFIG.value;
+
+  const screenPlane = MeshBuilder.CreatePlane(
+    "tvScreen",
+    {
+      width: config.screen.width,
+      height: config.screen.height,
+    },
+    props.scene!,
+  );
+
+  // Position the screen plane in front of the TV
+  screenPlane.position.set(
+    config.screen.position.x,
+    config.screen.position.y,
+    config.screen.position.z,
+  );
+  screenPlane.rotation.y = Angle.FromDegrees(90).radians();
+
+  return screenPlane;
+};
+
 const addVideoToTV = () => {
   if (!props.scene || !ENABLE_TV_VIDEO) {
     console.log("TV video disabled for performance");
@@ -191,61 +376,14 @@ const addVideoToTV = () => {
   }
 
   try {
-    // Create video element with performance optimizations
-    const videoElement = document.createElement("video");
-    videoElement.src = "/assets/videos/tv-placeholder.mp4";
-    videoElement.loop = true;
-    videoElement.muted = true; // Muted for autoplay
-    videoElement.autoplay = true;
-    videoElement.playsInline = true;
+    // Create and cache video resources
+    const { element: videoElement, texture: videoTexture } = createVideoResources();
 
-    // Performance optimizations for video
-    videoElement.width = 256; // Reduce video resolution for better performance
-    videoElement.height = 144; // 16:9 ratio at lower quality
-    videoElement.playbackRate = 1.0; // Normal speed
+    // Create screen plane
+    screenPlane.value = createScreenPlane();
 
-    // Create video texture with performance settings
-    videoTexture.value = new VideoTexture(
-      "tvVideoTexture",
-      videoElement,
-      props.scene,
-      false, // Not inverted
-      false, // Not mirrored
-      VideoTexture.TRILINEAR_SAMPLINGMODE, // Better quality filtering
-      {
-        autoPlay: true,
-        autoUpdateTexture: true,
-      },
-    );
-
-    videoTexture.value.uScale = -1;
-
-    // Performance: Update video texture less frequently
-    videoTexture.value.updateSamplingMode(VideoTexture.BILINEAR_SAMPLINGMODE); // Lower quality = better FPS
-
-    // Create a rectangular plane for the TV screen
-    screenPlane.value = MeshBuilder.CreatePlane(
-      "tvScreen",
-      {
-        width: 1.825, // Screen width
-        height: 1.14, // Screen height (16:9 aspect ratio)
-      },
-      props.scene,
-    );
-
-    // Position the screen plane in front of the TV
-    screenPlane.value.position.set(-9.1, 1.69, -4.48); // Slightly in front of TV
-    screenPlane.value.rotation.y = Angle.FromDegrees(90).radians();
-
-    // Create material for the screen
-    const screenMaterial = new StandardMaterial(
-      "tvScreenMaterial",
-      props.scene,
-    );
-    screenMaterial.diffuseTexture = videoTexture.value;
-    screenMaterial.emissiveTexture = videoTexture.value; // Make it glow
-    screenMaterial.emissiveColor = new Color3(0.8, 0.8, 0.8); // Bright emission
-    screenMaterial.backFaceCulling = false; // Show both sides
+    // Create screen material
+    const screenMaterial = createScreenMaterial(videoTexture);
 
     // Apply material to screen plane
     screenPlane.value.material = screenMaterial;
@@ -273,12 +411,14 @@ const loadTelevision = async () => {
   if (!props.scene) return;
 
   try {
+    const config = TABLE_CONFIG.value;
+    
     const loadedModel = await loadModel(props.scene, {
       fileName: "digital_television.glb",
       rootUrl: "/assets/models/house/",
-      position: new Vector3(-9.2, 0.91, -4.4), // On top of the table
-      rotation: new Vector3(0, Math.PI / 2, 0), // Rotated 90 degrees
-      scaling: new Vector3(0.2, 0.2, 0.2), // Scale down to fit on table
+      position: config.television.position,
+      rotation: config.television.rotation,
+      scaling: config.television.scaling,
       castShadows: false, // Disable shadows for performance
       receiveShadows: false,
       useCache: true,
@@ -316,6 +456,18 @@ const handleUseTable = () => {
   }
 };
 
+// Debounce utility
+const debounce = <T extends (...args: unknown[]) => void>(
+  func: T,
+  delay: number,
+) => {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
+
 const cleanup = () => {
   if (tableMesh.value) {
     if (tableMesh.value.physicsImpostor) {
@@ -341,23 +493,62 @@ const cleanup = () => {
     screenPlane.value = null;
   }
 
-  // Dispose video texture
-  if (videoTexture.value) {
-    videoTexture.value.dispose();
-    videoTexture.value = null;
-  }
-
   isLoaded.value = false;
 };
+
+// Cleanup materials and video resources
+const cleanupResources = () => {
+  // Cleanup materials
+  if (materialCache.value.brown) {
+    materialCache.value.brown.dispose();
+  }
+  if (materialCache.value.glass) {
+    materialCache.value.glass.dispose();
+  }
+  if (materialCache.value.screen) {
+    materialCache.value.screen.dispose();
+  }
+  materialCache.value = { brown: null, glass: null, screen: null };
+
+  // Cleanup video resources
+  if (videoCache.value.texture) {
+    videoCache.value.texture.dispose();
+  }
+  if (videoCache.value.element) {
+    videoCache.value.element.pause();
+    videoCache.value.element.src = "";
+  }
+  videoCache.value = { element: null, texture: null };
+};
+
+// Debounced table creation to prevent multiple rapid recreations
+const debouncedCreateTable = debounce(() => {
+  cleanup();
+  if (props.scene) {
+    createTable();
+  }
+}, 100);
 
 // Watch for scene changes
 watch(
   () => props.scene,
-  (newScene) => {
-    if (newScene) {
+  (newScene, oldScene) => {
+    // If scene changed from null to scene, create immediately
+    if (!oldScene && newScene) {
       createTable();
-    } else {
+      return;
+    }
+    
+    // If scene became null, cleanup immediately
+    if (oldScene && !newScene) {
       cleanup();
+      cleanupResources();
+      return;
+    }
+    
+    // For scene updates, use debounced creation
+    if (newScene && newScene !== oldScene) {
+      debouncedCreateTable();
     }
   },
   { immediate: true },
@@ -371,6 +562,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   cleanup();
+  cleanupResources();
 });
 
 // Export for other components
@@ -379,5 +571,7 @@ defineExpose({
   televisionMesh,
   isLoaded,
   cleanup,
+  cleanupResources,
+  TABLE_CONFIG,
 });
 </script>

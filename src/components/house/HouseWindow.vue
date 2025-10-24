@@ -4,7 +4,7 @@ div
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from "vue";
+import { onMounted, onUnmounted, watch, computed, ref } from "vue";
 import {
   Scene,
   MeshBuilder,
@@ -19,16 +19,14 @@ interface Props {
   scene: Scene | null;
   position: Vector3;
   rotation?: Vector3;
-  addShadowCaster?: (mesh: Mesh) => void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   rotation: () => new Vector3(0, 0, 0),
-  addShadowCaster: undefined,
 });
 
-// Window configuration
-const WINDOW_CONFIG = {
+// Window configuration - memoized
+const WINDOW_CONFIG = computed(() => ({
   width: 3,
   height: 4,
   depth: 0.6, // Total window depth
@@ -44,113 +42,153 @@ const WINDOW_CONFIG = {
     height: 0.2,
     depth: 0.8, // Extends out from wall
   },
-};
+}));
+
+// Material cache to prevent memory leaks
+const materialCache = ref<{
+  frame: StandardMaterial | null;
+  glass: StandardMaterial | null;
+  sill: StandardMaterial | null;
+}>({
+  frame: null,
+  glass: null,
+  sill: null,
+});
 
 let windowMeshes: Mesh[] = [];
 
-const createWindow = (): Mesh[] => {
-  if (!props.scene) return [];
+// Create and cache materials
+const createMaterials = (): {
+  frame: StandardMaterial;
+  glass: StandardMaterial;
+  sill: StandardMaterial;
+} => {
+  if (!props.scene) throw new Error("Scene not available");
 
-  const meshes: Mesh[] = [];
+  // Return cached materials if they exist
+  if (
+    materialCache.value.frame &&
+    materialCache.value.glass &&
+    materialCache.value.sill
+  ) {
+    return {
+      frame: materialCache.value.frame as StandardMaterial,
+      glass: materialCache.value.glass as StandardMaterial,
+      sill: materialCache.value.sill as StandardMaterial,
+    };
+  }
 
-  // Materials
-  // Window frame material (dark brown wood)
+  // Create new materials and cache them
   const frameMaterial = new StandardMaterial("windowFrame", props.scene);
   frameMaterial.diffuseColor = new Color3(0.4, 0.2, 0.1); // Dark brown
 
-  // Glass material (semi-transparent blue-tinted)
   const glassMaterial = new StandardMaterial("windowGlass", props.scene);
   glassMaterial.diffuseColor = new Color3(0.8, 0.9, 1.0); // Light blue tint
   glassMaterial.alpha = 0.3; // Semi-transparent
   glassMaterial.specularColor = new Color3(1, 1, 1); // Shiny reflection
 
-  // Window sill material (light stone)
   const sillMaterial = new StandardMaterial("windowSill", props.scene);
   sillMaterial.diffuseColor = new Color3(0.9, 0.9, 0.85); // Light beige stone
 
-  // Create window frame parts
+  // Cache materials
+  materialCache.value = {
+    frame: frameMaterial,
+    glass: glassMaterial,
+    sill: sillMaterial,
+  };
+
+  return { frame: frameMaterial, glass: glassMaterial, sill: sillMaterial };
+};
+
+// Create window frame parts
+const createFrameParts = (materials: { frame: StandardMaterial }): Mesh[] => {
+  const config = WINDOW_CONFIG.value;
+  const meshes: Mesh[] = [];
+
   // Top frame
   const topFrame = MeshBuilder.CreateBox(
     "windowTopFrame",
     {
-      width: WINDOW_CONFIG.width,
-      height: WINDOW_CONFIG.frame.thickness,
-      depth: WINDOW_CONFIG.frame.depth,
+      width: config.width,
+      height: config.frame.thickness,
+      depth: config.frame.depth,
     },
-    props.scene,
+    props.scene!,
   );
   topFrame.position = props.position.clone();
-  topFrame.position.y +=
-    WINDOW_CONFIG.height / 2 - WINDOW_CONFIG.frame.thickness / 2;
-  topFrame.material = frameMaterial;
+  topFrame.position.y += config.height / 2 - config.frame.thickness / 2;
+  topFrame.material = materials.frame;
   meshes.push(topFrame);
 
   // Bottom frame
   const bottomFrame = MeshBuilder.CreateBox(
     "windowBottomFrame",
     {
-      width: WINDOW_CONFIG.width,
-      height: WINDOW_CONFIG.frame.thickness,
-      depth: WINDOW_CONFIG.frame.depth,
+      width: config.width,
+      height: config.frame.thickness,
+      depth: config.frame.depth,
     },
-    props.scene,
+    props.scene!,
   );
   bottomFrame.position = props.position.clone();
-  bottomFrame.position.y -=
-    WINDOW_CONFIG.height / 2 - WINDOW_CONFIG.frame.thickness / 2;
-  bottomFrame.material = frameMaterial;
+  bottomFrame.position.y -= config.height / 2 - config.frame.thickness / 2;
+  bottomFrame.material = materials.frame;
   meshes.push(bottomFrame);
 
   // Left frame
   const leftFrame = MeshBuilder.CreateBox(
     "windowLeftFrame",
     {
-      width: WINDOW_CONFIG.frame.thickness,
-      height: WINDOW_CONFIG.height - 2 * WINDOW_CONFIG.frame.thickness,
-      depth: WINDOW_CONFIG.frame.depth,
+      width: config.frame.thickness,
+      height: config.height - 2 * config.frame.thickness,
+      depth: config.frame.depth,
     },
-    props.scene,
+    props.scene!,
   );
   leftFrame.position = props.position.clone();
-  leftFrame.position.x -=
-    WINDOW_CONFIG.width / 2 - WINDOW_CONFIG.frame.thickness / 2;
-  leftFrame.material = frameMaterial;
+  leftFrame.position.x -= config.width / 2 - config.frame.thickness / 2;
+  leftFrame.material = materials.frame;
   meshes.push(leftFrame);
 
   // Right frame
   const rightFrame = MeshBuilder.CreateBox(
     "windowRightFrame",
     {
-      width: WINDOW_CONFIG.frame.thickness,
-      height: WINDOW_CONFIG.height - 2 * WINDOW_CONFIG.frame.thickness,
-      depth: WINDOW_CONFIG.frame.depth,
+      width: config.frame.thickness,
+      height: config.height - 2 * config.frame.thickness,
+      depth: config.frame.depth,
     },
-    props.scene,
+    props.scene!,
   );
   rightFrame.position = props.position.clone();
-  rightFrame.position.x +=
-    WINDOW_CONFIG.width / 2 - WINDOW_CONFIG.frame.thickness / 2;
-  rightFrame.material = frameMaterial;
+  rightFrame.position.x += config.width / 2 - config.frame.thickness / 2;
+  rightFrame.material = materials.frame;
   meshes.push(rightFrame);
 
-  // Middle vertical divider (creates two window panes)
+  // Middle vertical divider
   const middleFrame = MeshBuilder.CreateBox(
     "windowMiddleFrame",
     {
-      width: WINDOW_CONFIG.frame.thickness * 0.7,
-      height: WINDOW_CONFIG.height - 2 * WINDOW_CONFIG.frame.thickness,
-      depth: WINDOW_CONFIG.frame.depth,
+      width: config.frame.thickness * 0.7,
+      height: config.height - 2 * config.frame.thickness,
+      depth: config.frame.depth,
     },
-    props.scene,
+    props.scene!,
   );
   middleFrame.position = props.position.clone();
-  middleFrame.material = frameMaterial;
+  middleFrame.material = materials.frame;
   meshes.push(middleFrame);
 
-  // Glass panes (left and right)
-  const glassWidth =
-    (WINDOW_CONFIG.width - 3 * WINDOW_CONFIG.frame.thickness) / 2;
-  const glassHeight = WINDOW_CONFIG.height - 2 * WINDOW_CONFIG.frame.thickness;
+  return meshes;
+};
+
+// Create glass panes
+const createGlassPanes = (materials: { glass: StandardMaterial }): Mesh[] => {
+  const config = WINDOW_CONFIG.value;
+  const meshes: Mesh[] = [];
+
+  const glassWidth = (config.width - 3 * config.frame.thickness) / 2;
+  const glassHeight = config.height - 2 * config.frame.thickness;
 
   // Left glass pane
   const leftGlass = MeshBuilder.CreateBox(
@@ -158,14 +196,13 @@ const createWindow = (): Mesh[] => {
     {
       width: glassWidth,
       height: glassHeight,
-      depth: WINDOW_CONFIG.glass.thickness,
+      depth: config.glass.thickness,
     },
-    props.scene,
+    props.scene!,
   );
   leftGlass.position = props.position.clone();
-  leftGlass.position.x -=
-    (glassWidth + WINDOW_CONFIG.frame.thickness * 0.7) / 2;
-  leftGlass.material = glassMaterial;
+  leftGlass.position.x -= (glassWidth + config.frame.thickness * 0.7) / 2;
+  leftGlass.material = materials.glass;
   meshes.push(leftGlass);
 
   // Right glass pane
@@ -174,92 +211,118 @@ const createWindow = (): Mesh[] => {
     {
       width: glassWidth,
       height: glassHeight,
-      depth: WINDOW_CONFIG.glass.thickness,
+      depth: config.glass.thickness,
     },
-    props.scene,
+    props.scene!,
   );
   rightGlass.position = props.position.clone();
-  rightGlass.position.x +=
-    (glassWidth + WINDOW_CONFIG.frame.thickness * 0.7) / 2;
-  rightGlass.material = glassMaterial;
+  rightGlass.position.x += (glassWidth + config.frame.thickness * 0.7) / 2;
+  rightGlass.material = materials.glass;
   meshes.push(rightGlass);
 
-  // Window sill
+  return meshes;
+};
+
+// Create window sill
+const createWindowSill = (materials: { sill: StandardMaterial }): Mesh => {
+  const config = WINDOW_CONFIG.value;
+
   const windowSill = MeshBuilder.CreateBox(
     "windowSill",
     {
-      width: WINDOW_CONFIG.sill.width,
-      height: WINDOW_CONFIG.sill.height,
-      depth: WINDOW_CONFIG.sill.depth,
+      width: config.sill.width,
+      height: config.sill.height,
+      depth: config.sill.depth,
     },
-    props.scene,
+    props.scene!,
   );
   windowSill.position = props.position.clone();
-  windowSill.position.y -=
-    WINDOW_CONFIG.height / 2 + WINDOW_CONFIG.sill.height / 2;
-  windowSill.position.z += WINDOW_CONFIG.sill.depth / 4; // Extend slightly from wall
-  windowSill.material = sillMaterial;
+  windowSill.position.y -= config.height / 2 + config.sill.height / 2;
+  windowSill.position.z += config.sill.depth / 4;
+  windowSill.material = materials.sill;
   windowSill.material.zOffset = -1;
-  meshes.push(windowSill);
 
-  // Create invisible collision mesh to cover entire window opening
+  return windowSill;
+};
+
+// Create collision mesh
+const createCollisionMesh = (): Mesh => {
+  const config = WINDOW_CONFIG.value;
+
   const windowCollision = MeshBuilder.CreateBox(
     "windowCollision",
     {
-      width: WINDOW_CONFIG.width - 2 * WINDOW_CONFIG.frame.thickness, // Inner window width
-      height: WINDOW_CONFIG.height - 2 * WINDOW_CONFIG.frame.thickness, // Inner window height
-      depth: 0.3, // Thick enough for reliable collision
+      width: config.width - 2 * config.frame.thickness,
+      height: config.height - 2 * config.frame.thickness,
+      depth: 0.3,
     },
-    props.scene,
+    props.scene!,
   );
   windowCollision.position = props.position.clone();
-  windowCollision.isVisible = false; // Invisible collision mesh
+  windowCollision.isVisible = false;
   windowCollision.physicsImpostor = new PhysicsImpostor(
     windowCollision,
     PhysicsImpostor.BoxImpostor,
     { mass: 0, friction: 0.8, restitution: 0.3 },
     props.scene!,
   );
-  meshes.push(windowCollision);
 
-  // Apply rotation if specified
-  if (
-    props.rotation &&
-    (props.rotation.x !== 0 || props.rotation.y !== 0 || props.rotation.z !== 0)
-  ) {
-    meshes.forEach((mesh) => {
-      mesh.rotation = props.rotation!.clone();
+  return windowCollision;
+};
+
+const createWindow = (): Mesh[] => {
+  if (!props.scene) return [];
+
+  const meshes: Mesh[] = [];
+
+  try {
+    // Create and cache materials
+    const materials = createMaterials();
+
+    // Create frame parts
+    const frameMeshes = createFrameParts(materials);
+    meshes.push(...frameMeshes);
+
+    // Create glass panes
+    const glassMeshes = createGlassPanes(materials);
+    meshes.push(...glassMeshes);
+
+    // Create window sill
+    const windowSill = createWindowSill(materials);
+    meshes.push(windowSill);
+
+    // Create collision mesh
+    const collisionMesh = createCollisionMesh();
+    meshes.push(collisionMesh);
+
+    // Apply rotation if specified
+    if (
+      props.rotation &&
+      (props.rotation.x !== 0 ||
+        props.rotation.y !== 0 ||
+        props.rotation.z !== 0)
+    ) {
+      meshes.forEach((mesh) => {
+        mesh.rotation = props.rotation!.clone();
+      });
+    }
+
+    // Add physics to solid parts (frame, sill, and glass for collision)
+    const solidMeshes = meshes.filter((mesh) => mesh !== collisionMesh);
+    solidMeshes.forEach((mesh) => {
+      mesh.physicsImpostor = new PhysicsImpostor(
+        mesh,
+        PhysicsImpostor.BoxImpostor,
+        { mass: 0, friction: 0.8, restitution: 0.3 },
+        props.scene!,
+      );
     });
+
+    return meshes;
+  } catch (error) {
+    console.error("Error creating window:", error);
+    return [];
   }
-
-  // Add physics to solid parts (frame, sill, and glass for collision)
-  const solidMeshes = [
-    topFrame,
-    bottomFrame,
-    leftFrame,
-    rightFrame,
-    middleFrame,
-    windowSill,
-    leftGlass,
-    rightGlass,
-  ];
-  solidMeshes.forEach((mesh) => {
-    mesh.physicsImpostor = new PhysicsImpostor(
-      mesh,
-      PhysicsImpostor.BoxImpostor,
-      { mass: 0, friction: 0.8, restitution: 0.3 },
-      props.scene!,
-    );
-  });
-
-  // Shadows disabled for performance
-  // if (props.addShadowCaster) {
-  //   meshes.forEach((mesh) => {
-  //     props.addShadowCaster!(mesh);
-  //   });
-  // }
-
-  return meshes;
 };
 
 const createWindowMeshes = () => {
@@ -276,6 +339,18 @@ const createWindowMeshes = () => {
   }
 };
 
+// Debounce utility
+const debounce = <T extends (...args: unknown[]) => void>(
+  func: T,
+  delay: number,
+) => {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
+
 const cleanup = () => {
   windowMeshes.forEach((mesh) => {
     if (mesh.physicsImpostor) {
@@ -286,28 +361,50 @@ const cleanup = () => {
   windowMeshes = [];
 };
 
-// Watch for scene changes
+// Cleanup materials when component unmounts
+const cleanupMaterials = () => {
+  if (materialCache.value.frame) {
+    materialCache.value.frame.dispose();
+  }
+  if (materialCache.value.glass) {
+    materialCache.value.glass.dispose();
+  }
+  if (materialCache.value.sill) {
+    materialCache.value.sill.dispose();
+  }
+  materialCache.value = { frame: null, glass: null, sill: null };
+};
+
+// Debounced window creation to prevent multiple rapid recreations
+const debouncedCreateWindow = debounce(() => {
+  cleanup();
+  if (props.scene) {
+    createWindowMeshes();
+  }
+}, 100);
+
+// Combined watcher for scene and position changes
 watch(
-  () => props.scene,
-  (newScene) => {
-    if (newScene) {
+  [() => props.scene, () => props.position],
+  ([newScene, newPosition], [oldScene, oldPosition]) => {
+    // If scene changed from null to scene, create immediately
+    if (!oldScene && newScene) {
       createWindowMeshes();
-    } else {
+      return;
+    }
+
+    // If scene became null, cleanup immediately
+    if (oldScene && !newScene) {
       cleanup();
+      return;
+    }
+
+    // For position changes or scene updates, use debounced creation
+    if (newScene && (newPosition !== oldPosition || newScene !== oldScene)) {
+      debouncedCreateWindow();
     }
   },
   { immediate: true },
-);
-
-// Watch for position changes
-watch(
-  () => props.position,
-  () => {
-    cleanup();
-    if (props.scene) {
-      createWindowMeshes();
-    }
-  },
 );
 
 onMounted(() => {
@@ -318,12 +415,14 @@ onMounted(() => {
 
 onUnmounted(() => {
   cleanup();
+  cleanupMaterials();
 });
 
 // Export configuration for other components
 defineExpose({
   WINDOW_CONFIG,
   cleanup,
+  cleanupMaterials,
 });
 </script>
 
